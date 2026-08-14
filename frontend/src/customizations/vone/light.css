@@ -1,0 +1,48 @@
+:root:root[data-brand-profile='vone'][theme-mode='light'] {
+  --vone-text-primary: #111b2d;
+  --vone-text-secondary: #5d6878;
+  --vone-text-muted: #8691a2;
+  --vone-surface-page: #f4f7fb;
+  --vone-surface-container: #ffffff;
+  --vone-surface-subtle: #f7f9fc;
+  --vone-border: #dbe3ed;
+  --vone-border-strong: #c7d1de;
+  --vone-logo-blue-opacity: 1;
+  --vone-logo-light-opacity: 0;
+  --vone-auth-story-background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(228, 239, 251, 0.76)), var(--vone-brand-50);
+  --vone-auth-glass-background: rgba(255, 255, 255, 0.58);
+  --vone-auth-search-background: rgba(255, 255, 255, 0.82);
+  --vone-auth-glass-border: rgba(255, 255, 255, 0.84);
+
+  --brand-main: var(--vone-brand-600);
+  --td-brand-color-1: var(--vone-brand-50);
+  --td-brand-color-2: var(--vone-brand-100);
+  --td-brand-color-3: var(--vone-brand-300);
+  --td-brand-color-4: var(--vone-brand-600);
+  --td-brand-color-5: var(--vone-brand-700);
+  --td-brand-color-6: var(--vone-brand-800);
+  --td-brand-color-light: var(--vone-brand-50);
+  --td-brand-color-focus: rgba(32, 88, 149, 0.2);
+  --td-brand-color-disabled: #9fb9d4;
+  --td-brand-color-hover: var(--vone-brand-500);
+  --td-brand-color: var(--vone-brand-600);
+  --td-brand-color-active: var(--vone-brand-700);
+  --td-bg-color-page: var(--vone-surface-page);
+  --td-bg-color-sidebar: #f7f9fc;
+  --td-bg-color-settings-modal: #f7f9fc;
+  --td-bg-color-container: var(--vone-surface-container);
+  --td-bg-color-container-hover: #edf3f9;
+  --td-bg-color-container-active: #e3ecf6;
+  --td-bg-color-secondarycontainer: #edf3f9;
+  --td-component-stroke: var(--vone-border);
+  --td-component-border: var(--vone-border-strong);
+  --td-text-color-primary: var(--vone-text-primary);
+  --td-text-color-secondary: var(--vone-text-secondary);
+  --td-text-color-placeholder: var(--vone-text-muted);
+  --td-radius-default: var(--vone-radius-sm);
+  --td-radius-medium: var(--vone-radius-md);
+  --td-radius-large: var(--vone-radius-lg);
+  --td-shadow-1: var(--vone-shadow-sm);
+  --td-shadow-2: var(--vone-shadow-md);
+  --td-shadow-3: var(--vone-shadow-lg);
+}
