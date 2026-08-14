@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>WeKnora</title>
+    <title>VONE知识库 · Vone Knowledge</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -10,18 +10,20 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="keywords" content="知识问答、微信对话开放平台、对话开放平台、对话平台、人工智能定制、人机对话、智能问答、人机交互、自然语言处理、自然语言理解、NLP、人工智能产品、人工智能开源、人工智能算法、语音助手"/>
-    <meta name="description" content="WeKnora是一款基于大语言模型的文档理解与语义检索框架，专为结构复杂、内容异构的文档场景而打造。"/>
+    <meta name="description" content="连接知识、检索答案，构建可信的企业智能。"/>
     <link rel="shortcut icon" type="image/png" href="./public/favicon.ico"/>
     <link rel="apple-touch-icon" sizes="120x120" type="image/png" href="./public/favicon.ico"/>
 </head>
 <body>
 <script>
 (function(){
-  var t=localStorage.getItem('WeKnora_theme')||'light';
+  var uid='anon';
+  try{var u=JSON.parse(localStorage.getItem('weknora_user')||'null');if(u&&u.id)uid=String(u.id);}catch(_){}
+  var t=localStorage.getItem('WeKnora_'+uid+'_theme')||localStorage.getItem('WeKnora_theme')||'light';
   if(t==='system')t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
   document.documentElement.setAttribute('theme-mode',t);
-  /* 与 theme.css 中 --td-bg-color-page 一致，避免样式加载后整页背景从 #fff 跳到 #eee 触发重绘闪动 */
-  var bg=t==='dark'?'#181818':'#eee';
+  /* 与 VONE 主题页背景一致，避免样式加载前后切换底色造成闪动。 */
+  var bg=t==='dark'?'#0b1320':'#f4f7fb';
   document.documentElement.style.background=bg;
   document.documentElement.style.minHeight='100%';
   document.documentElement.style.colorScheme=t==='dark'?'dark':'light';
@@ -32,10 +34,10 @@
     if(w){
       if(t==='dark'){
         if(w.WindowSetDarkTheme)w.WindowSetDarkTheme();
-        if(w.WindowSetBackgroundColour)w.WindowSetBackgroundColour(24,24,24,255);
+        if(w.WindowSetBackgroundColour)w.WindowSetBackgroundColour(11,19,32,255);
       }else{
         if(w.WindowSetLightTheme)w.WindowSetLightTheme();
-        if(w.WindowSetBackgroundColour)w.WindowSetBackgroundColour(238,238,238,255);
+        if(w.WindowSetBackgroundColour)w.WindowSetBackgroundColour(244,247,251,255);
       }
     }
   }catch(_){}
@@ -66,9 +68,11 @@
 <div id="app"></div>
 <script>
 (function(){
-  var t=localStorage.getItem('WeKnora_theme')||'light';
+  var uid='anon';
+  try{var u=JSON.parse(localStorage.getItem('weknora_user')||'null');if(u&&u.id)uid=String(u.id);}catch(_){}
+  var t=localStorage.getItem('WeKnora_'+uid+'_theme')||localStorage.getItem('WeKnora_theme')||'light';
   if(t==='system')t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
-  var bg=t==='dark'?'#181818':'#eee';
+  var bg=t==='dark'?'#0b1320':'#f4f7fb';
   var el=document.getElementById('app');
   if(el){ el.style.background=bg; el.style.minHeight='100%'; }
 })();
