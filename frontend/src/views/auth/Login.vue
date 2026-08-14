@@ -1,5 +1,13 @@
 <template>
-  <div class="login-layout">
+  <VoneLoginExperience v-if="brandProfile === 'vone'" ref="voneLoginRef" :is-register-mode="isRegisterMode"
+    :registration-enabled="registrationEnabled" :invite-lookup="inviteLookup"
+    :invite-lookup-error="inviteLookupError" :loading="loading" :oidc-enabled="oidcEnabled"
+    :oidc-loading="oidcLoading" :oidc-login-text="oidcLoginText" :show-language-menu="showLanguageMenu"
+    :language-options="languageOptions" :current-language="currentLanguage" :current-lang-option="currentLangOption"
+    :form-data="formData" :register-data="registerData" :form-rules="formRules" :register-rules="registerRules"
+    @login="handleLogin" @register="handleRegister" @oidc-login="handleOIDCLogin" @toggle-mode="toggleMode"
+    @toggle-language="toggleLanguageMenu" @select-language="selectLanguage" />
+  <div v-else class="login-layout">
     <div class="animated-bg">
       <div class="knowledge-node node-1">
         <svg class="node-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -348,6 +356,8 @@ import {
 } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
+import VoneLoginExperience from '@/customizations/vone/components/VoneLoginExperience.vue'
+import { brandProfile } from '@/customizations/vone'
 
 // Import screenshot images
 import screenshot1 from '@/assets/img/screenshot-1.svg'
@@ -391,6 +401,7 @@ const slides = [
 // Form references
 const formRef = ref()
 const registerFormRef = ref()
+const voneLoginRef = ref()
 
 // State management
 const loading = ref(false)
@@ -635,7 +646,9 @@ const handleOIDCLogin = async () => {
 // Handle login
 const handleLogin = async () => {
   try {
-    const valid = await formRef.value?.validate()
+    const valid = brandProfile === 'vone'
+      ? await voneLoginRef.value?.validateLogin()
+      : await formRef.value?.validate()
     if (valid !== true) return
 
     loading.value = true
@@ -665,7 +678,9 @@ const handleLogin = async () => {
 // (drops back to the login form for the user to sign in).
 const handleRegister = async () => {
   try {
-    const valid = await registerFormRef.value?.validate()
+    const valid = brandProfile === 'vone'
+      ? await voneLoginRef.value?.validateRegister()
+      : await registerFormRef.value?.validate()
     if (valid !== true) return
 
     loading.value = true

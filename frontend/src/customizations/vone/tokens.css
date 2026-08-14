@@ -1,0 +1,31 @@
+html[data-brand-profile='vone'] {
+  --vone-brand-50: #f2f7fd;
+  --vone-brand-100: #e4effb;
+  --vone-brand-200: #c7dcf4;
+  --vone-brand-300: #9fc3eb;
+  --vone-brand-400: #6fa2dd;
+  --vone-brand-500: #3479d8;
+  --vone-brand-600: #205895;
+  --vone-brand-700: #174a82;
+  --vone-brand-800: #123d6c;
+  --vone-brand-900: #102f51;
+  --vone-success: #0f9f6e;
+  --vone-warning: #d98a16;
+  --vone-error: #d64b55;
+  --vone-radius-sm: 6px;
+  --vone-radius-md: 10px;
+  --vone-radius-lg: 16px;
+  --vone-radius-xl: 24px;
+  --vone-shadow-sm: 0 4px 16px rgba(18, 61, 108, 0.08);
+  --vone-shadow-md: 0 16px 48px rgba(18, 61, 108, 0.12);
+  --vone-shadow-lg: 0 30px 90px rgba(18, 61, 108, 0.18);
+  --vone-space-1: 4px;
+  --vone-space-2: 8px;
+  --vone-space-3: 12px;
+  --vone-space-4: 16px;
+  --vone-space-5: 20px;
+  --vone-space-6: 24px;
+  --vone-space-8: 32px;
+  --vone-space-10: 40px;
+  --vone-space-12: 48px;
+}

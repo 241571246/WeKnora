@@ -1,0 +1,20 @@
+html[data-brand-profile='vone'] .t-button--theme-primary:not(.t-button--variant-text):not(.t-button--variant-outline) {
+  background: linear-gradient(135deg, var(--vone-brand-600), var(--vone-brand-700));
+  border-color: var(--vone-brand-600);
+  box-shadow: 0 8px 20px rgba(32, 88, 149, 0.18);
+}
+
+html[data-brand-profile='vone'] .t-button--theme-primary:not(.t-button--variant-text):not(.t-button--variant-outline):hover {
+  background: linear-gradient(135deg, var(--vone-brand-500), var(--vone-brand-600));
+  border-color: var(--vone-brand-500);
+}
+
+html[data-brand-profile='vone'] .t-input,
+html[data-brand-profile='vone'] .t-input__wrap,
+html[data-brand-profile='vone'] .t-select__wrap {
+  border-radius: var(--vone-radius-md);
+}
+
+html[data-brand-profile='vone'] :focus-visible {
+  outline-color: var(--td-brand-color);
+}

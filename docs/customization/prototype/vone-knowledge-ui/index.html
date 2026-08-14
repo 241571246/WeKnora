@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="VONE知识库（Vone Knowledge）界面定制原型" />
+    <meta name="theme-color" content="#205895" />
+    <link rel="icon" href="./assets/favicon.ico" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>登录 · VONE知识库</title>
+  </head>
+  <body>
+    <div id="prototypeApp">
+      <main class="auth-layout route-view" data-route-view="login register">
+        <section class="brand-panel" aria-label="VONE知识库品牌介绍">
+          <div class="brand-top">
+            <picture class="brand-logo-wrap">
+              <source media="(prefers-color-scheme: dark)" srcset="./assets/vone-logo-light.png" />
+              <img class="brand-logo" src="./assets/vone-logo-blue.png" alt="VONE" />
+            </picture>
+            <div class="brand-title-block">
+              <h1>VONE知识库</h1>
+              <p>Vone Knowledge</p>
+            </div>
+          </div>
+
+          <div class="brand-message">
+            <p class="brand-kicker" data-cn="连接知识，激活企业智慧" data-en="Connect knowledge. Activate intelligence.">连接知识，激活企业智慧</p>
+            <h2 data-cn="让每一份知识都产生价值" data-en="Turn every piece of knowledge into value">让每一份知识都产生价值</h2>
+            <p data-cn="统一沉淀、可信检索、智能问答，让团队更快抵达正确答案。" data-en="Capture, retrieve and answer with confidence—so every team reaches the right answer faster.">统一沉淀、可信检索、智能问答，让团队更快抵达正确答案。</p>
+          </div>
+
+          <div class="knowledge-visual" aria-hidden="true">
+            <span class="node node-a"></span><span class="node node-b"></span><span class="node node-c"></span>
+            <span class="node node-d"></span><span class="node node-e"></span>
+            <span class="connection line-a"></span><span class="connection line-b"></span>
+            <span class="connection line-c"></span><span class="connection line-d"></span>
+            <div class="doc-card doc-a"><b>W</b><i></i><i></i><i></i></div>
+            <div class="doc-card doc-b"><b>PDF</b><i></i><i></i><i></i></div>
+            <div class="doc-card doc-c"><b>FAQ</b><i></i><i></i></div>
+            <div class="visual-search">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+              <span data-cn="搜索知识、文档、问题或答案…" data-en="Search knowledge, documents or answers…">搜索知识、文档、问题或答案…</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="auth-panel">
+          <header class="utility-bar">
+            <div class="segmented theme-switch" aria-label="主题">
+              <button type="button" data-theme-value="light" aria-pressed="true">☀ <span data-cn="浅色" data-en="Light">浅色</span></button>
+              <button type="button" data-theme-value="dark" aria-pressed="false">◐ <span data-cn="深色" data-en="Dark">深色</span></button>
+              <button type="button" data-theme-value="system" aria-pressed="false">▣ <span data-cn="跟随系统" data-en="System">跟随系统</span></button>
+            </div>
+            <div class="segmented language-switch" aria-label="语言">
+              <button type="button" data-lang-value="zh" aria-pressed="true">中文</button>
+              <button type="button" data-lang-value="en" aria-pressed="false">EN</button>
+            </div>
+          </header>
+
+          <div class="auth-content">
+            <form id="loginForm" class="auth-form route-view" data-route-view="login">
+              <div class="form-heading">
+                <span class="mobile-product">VONE知识库 · Vone Knowledge</span>
+                <h2 data-cn="欢迎登录" data-en="Welcome back">欢迎登录</h2>
+                <p data-cn="连接知识、检索答案、构建可信的企业智能" data-en="Connect knowledge, retrieve answers and build trusted enterprise intelligence">连接知识、检索答案、构建可信的企业智能</p>
+              </div>
+              <label class="field">
+                <span data-cn="邮箱或用户名" data-en="Email or username">邮箱或用户名</span>
+                <span class="input-wrap">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>
+                  <input id="loginIdentity" autocomplete="username" placeholder="邮箱或用户名" data-placeholder-cn="邮箱或用户名" data-placeholder-en="Email or username" />
+                </span>
+              </label>
+              <label class="field">
+                <span data-cn="密码" data-en="Password">密码</span>
+                <span class="input-wrap">
+                  <svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+                  <input id="loginPassword" type="password" autocomplete="current-password" placeholder="密码" data-placeholder-cn="密码" data-placeholder-en="Password" />
+                  <button class="icon-button password-toggle" type="button" aria-label="显示密码">◎</button>
+                </span>
+              </label>
+              <div class="form-meta">
+                <label class="checkbox"><input type="checkbox" /><span data-cn="记住我" data-en="Remember me">记住我</span></label>
+                <button class="text-button" type="button" data-demo-message="密码找回流程将在正式开发时接入。" data-cn="忘记密码？" data-en="Forgot password?">忘记密码？</button>
+              </div>
+              <button class="primary-button" type="submit" data-cn="登录" data-en="Sign in">登录</button>
+              <button class="secondary-button" type="button" data-demo-message="企业身份登录将在正式开发时接入。">
+                <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-4 7 4v13M9 11h1m4 0h1m-6 4h1m4 0h1"></path></svg>
+                <span data-cn="使用企业身份登录" data-en="Continue with enterprise identity">使用企业身份登录</span>
+              </button>
+              <p class="route-link"><span data-cn="还没有账户？" data-en="New to Vone Knowledge?">还没有账户？</span><a href="#register" data-cn="创建账户" data-en="Create account">创建账户</a></p>
+            </form>
+
+            <form id="registerForm" class="auth-form route-view" data-route-view="register">
+              <div class="form-heading">
+                <span class="mobile-product">VONE知识库 · Vone Knowledge</span>
+                <h2 data-cn="创建账户" data-en="Create your account">创建账户</h2>
+                <p data-cn="注册后即可建立团队知识库并开始智能问答" data-en="Create a workspace and start asking trusted questions">注册后即可建立团队知识库并开始智能问答</p>
+              </div>
+              <div class="field-row">
+                <label class="field"><span data-cn="姓名" data-en="Name">姓名</span><span class="input-wrap"><input required placeholder="姓名" data-placeholder-cn="姓名" data-placeholder-en="Name" /></span></label>
+                <label class="field"><span data-cn="组织名称" data-en="Organization">组织名称</span><span class="input-wrap"><input required placeholder="组织名称" data-placeholder-cn="组织名称" data-placeholder-en="Organization" /></span></label>
+              </div>
+              <label class="field"><span data-cn="工作邮箱" data-en="Work email">工作邮箱</span><span class="input-wrap"><input type="email" required autocomplete="email" placeholder="name@company.com" /></span></label>
+              <label class="field"><span data-cn="设置密码" data-en="Create password">设置密码</span><span class="input-wrap"><input type="password" required minlength="8" autocomplete="new-password" placeholder="至少 8 位字符" data-placeholder-cn="至少 8 位字符" data-placeholder-en="At least 8 characters" /><button class="icon-button password-toggle" type="button" aria-label="显示密码">◎</button></span></label>
+              <label class="checkbox agreement"><input type="checkbox" required /><span data-cn="我已阅读并同意服务条款与隐私政策" data-en="I agree to the Terms of Service and Privacy Policy">我已阅读并同意服务条款与隐私政策</span></label>
+              <button class="primary-button" type="submit" data-cn="创建账户" data-en="Create account">创建账户</button>
+              <p class="registration-note" data-cn="公开注册入口可在部署配置中关闭。" data-en="Public registration can be disabled in deployment settings.">公开注册入口可在部署配置中关闭。</p>
+              <p class="route-link"><span data-cn="已有账户？" data-en="Already have an account?">已有账户？</span><a href="#login" data-cn="返回登录" data-en="Back to sign in">返回登录</a></p>
+            </form>
+          </div>
+
+          <footer class="auth-footer"><span>@vonechina 2026</span><span>Powered by Tencent WeKnora</span></footer>
+        </section>
+      </main>
+
+      <main class="home-shell route-view" data-route-view="home">
+        <aside class="sidebar">
+          <div class="sidebar-brand">
+            <img src="./assets/vone-logo-blue.png" alt="VONE" />
+            <strong>VONE知识库</strong><span>Vone Knowledge</span>
+          </div>
+          <nav class="main-nav" aria-label="主导航">
+            <button class="active" type="button"><span class="nav-icon">▰</span><span data-cn="知识库" data-en="Knowledge bases">知识库</span></button>
+            <button type="button" data-demo-message="知识问答页面将在下一阶段复用当前主题壳层。"><span class="nav-icon">◯</span><span data-cn="知识问答" data-en="Knowledge Q&A">知识问答</span></button>
+            <button type="button" data-demo-message="智能体页面将在下一阶段复用当前主题壳层。"><span class="nav-icon">⌘</span><span data-cn="智能体" data-en="Agents">智能体</span></button>
+            <button type="button" data-demo-message="数据源页面将在下一阶段复用当前主题壳层。"><span class="nav-icon">▱</span><span data-cn="数据源" data-en="Data sources">数据源</span></button>
+            <button type="button" data-demo-message="系统设置页面将在下一阶段复用当前主题壳层。"><span class="nav-icon">⚙</span><span data-cn="系统设置" data-en="Settings">系统设置</span></button>
+          </nav>
+          <div class="sidebar-bottom">
+            <button class="account-button" type="button" data-demo-message="这是管理员账户菜单原型。"><span class="avatar">管</span><span data-cn="管理员" data-en="Administrator">管理员</span><span>⌄</span></button>
+            <p>Powered by Tencent WeKnora</p><p>@vonechina 2026</p>
+          </div>
+        </aside>
+
+        <section class="workspace">
+          <header class="workspace-header">
+            <div class="title-group"><button id="mobileMenuButton" class="mobile-menu-button" type="button" aria-label="打开菜单">☰</button><h1 data-cn="知识库" data-en="Knowledge bases">知识库</h1></div>
+            <label class="global-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input placeholder="搜索知识库、文档或答案" data-placeholder-cn="搜索知识库、文档或答案" data-placeholder-en="Search knowledge, documents or answers" /></label>
+            <div class="header-actions">
+              <button id="newKbButton" class="primary-button compact" type="button" data-cn="新建知识库" data-en="New knowledge base">新建知识库</button>
+              <div class="segmented language-switch small"><button type="button" data-lang-value="zh" aria-pressed="true">中文</button><button type="button" data-lang-value="en" aria-pressed="false">EN</button></div>
+              <div class="home-theme-control">
+                <button class="icon-button" type="button" id="homeThemeButton" aria-label="切换主题">☀</button>
+                <div class="theme-popover" id="themePopover">
+                  <button type="button" data-theme-value="light">☀ <span data-cn="浅色" data-en="Light">浅色</span></button>
+                  <button type="button" data-theme-value="dark">◐ <span data-cn="深色" data-en="Dark">深色</span></button>
+                  <button type="button" data-theme-value="system">▣ <span data-cn="跟随系统" data-en="System">跟随系统</span></button>
+                </div>
+              </div>
+              <button class="icon-button notification" type="button" data-demo-message="暂无新通知。" aria-label="通知">♢</button>
+            </div>
+          </header>
+
+          <div class="workspace-content">
+            <section class="welcome-panel">
+              <div><h2 data-cn="让企业知识真正可用" data-en="Make enterprise knowledge genuinely useful">让企业知识真正可用</h2><p data-cn="统一沉淀资料，快速检索答案，并以可信引用支持每一次决策。" data-en="Centralize information, retrieve answers quickly, and support every decision with trusted citations.">统一沉淀资料，快速检索答案，并以可信引用支持每一次决策。</p>
+                <div class="quick-actions">
+                  <button type="button" data-demo-message="导入文档流程将在业务原型阶段接入。">↥ <span data-cn="导入文档" data-en="Import documents">导入文档</span></button>
+                  <button type="button" data-demo-message="将进入知识问答页面。">◌ <span data-cn="创建问答" data-en="Ask a question">创建问答</span></button>
+                  <button type="button" data-demo-message="将进入模型配置页面。">◇ <span data-cn="配置模型" data-en="Configure models">配置模型</span></button>
+                </div>
+              </div>
+              <div class="folder-visual" aria-hidden="true"><span class="sheet back"></span><span class="sheet front"></span><span class="folder"></span><span class="lens"></span></div>
+            </section>
+
+            <section class="library-section">
+              <div class="section-heading"><h2 data-cn="我的知识库" data-en="My knowledge bases">我的知识库</h2><div class="view-switch"><button class="active" type="button" aria-label="卡片视图">⊞</button><button type="button" data-demo-message="列表视图将在业务原型阶段补充。" aria-label="列表视图">☷</button></div></div>
+              <div class="library-grid">
+                <article class="library-card" tabindex="0" data-demo-message="打开“产品与方案”知识库。"><div class="document-icon">▤</div><button class="card-menu" type="button" aria-label="更多操作">•••</button><h3 data-cn="产品与方案" data-en="Products & solutions">产品与方案</h3><p data-cn="产品手册、解决方案与常见问题" data-en="Product manuals, solutions and FAQs">产品手册、解决方案与常见问题</p><div class="card-meta"><span class="ready" data-cn="● 已就绪" data-en="● Ready">● 已就绪</span><time>2026-08-11 10:30</time></div></article>
+                <article class="library-card" tabindex="0" data-demo-message="打开“项目交付规范”知识库。"><div class="document-icon">▤</div><button class="card-menu" type="button" aria-label="更多操作">•••</button><h3 data-cn="项目交付规范" data-en="Delivery standards">项目交付规范</h3><p data-cn="实施流程、验收标准与交付模板" data-en="Implementation, acceptance and delivery templates">实施流程、验收标准与交付模板</p><div class="card-meta"><span class="ready" data-cn="● 已就绪" data-en="● Ready">● 已就绪</span><time>2026-08-09 16:45</time></div></article>
+                <article class="library-card" tabindex="0" data-demo-message="打开“企业制度”知识库。"><div class="document-icon">▤</div><button class="card-menu" type="button" aria-label="更多操作">•••</button><h3 data-cn="企业制度" data-en="Company policies">企业制度</h3><p data-cn="行政、人事与信息安全制度" data-en="Administration, HR and information security">行政、人事与信息安全制度</p><div class="card-meta"><span class="ready" data-cn="● 已就绪" data-en="● Ready">● 已就绪</span><time>2026-08-06 09:20</time></div></article>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="newKbDialog" class="prototype-dialog">
+      <form method="dialog" id="newKbForm">
+        <div class="dialog-heading"><div><h2 data-cn="新建知识库" data-en="New knowledge base">新建知识库</h2><p data-cn="为资料创建清晰、可维护的知识空间。" data-en="Create a clear, maintainable space for your content.">为资料创建清晰、可维护的知识空间。</p></div><button class="icon-button" value="cancel" aria-label="关闭">×</button></div>
+        <label class="field"><span data-cn="知识库名称" data-en="Name">知识库名称</span><span class="input-wrap"><input required placeholder="例如：客户服务手册" data-placeholder-cn="例如：客户服务手册" data-placeholder-en="e.g. Customer service handbook" /></span></label>
+        <label class="field"><span data-cn="说明" data-en="Description">说明</span><span class="input-wrap textarea-wrap"><textarea rows="4" placeholder="简要说明知识库的内容和使用范围" data-placeholder-cn="简要说明知识库的内容和使用范围" data-placeholder-en="Describe the content and intended use"></textarea></span></label>
+        <div class="dialog-actions"><button class="secondary-button compact" value="cancel" data-cn="取消" data-en="Cancel">取消</button><button class="primary-button compact" value="create" data-cn="创建" data-en="Create">创建</button></div>
+      </form>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
