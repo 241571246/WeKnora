@@ -5,7 +5,7 @@ status: Active
 sourceOfTruth: Docs
 externalLink: N/A
 timezone: Asia/Singapore
-updatedAt: "2026-08-18T01:24:46+08:00"
+updatedAt: "2026-08-18T11:34:46+08:00"
 targetRelease: VONE-0.7.2.1
 owners:
   project: ROCKL
@@ -13,11 +13,11 @@ owners:
   maintenanceDeveloper: ROCKL
   qa: RockL
   qaSecondReviewer: TBD
-  qaExceptionApprover: "Tim (candidate; stable employee code and approval evidence pending)"
+  qaExceptionApprover: "Tim / T001 (BUG-2026-001 scoped exception approved; no release-wide exception granted)"
 taskSource:
   type: Team Task Directories
   location: tasks
-  lastReconciledAt: "2026-08-18T01:24:46+08:00"
+  lastReconciledAt: "2026-08-18T11:34:46+08:00"
 assurance:
   modelVersion: 2
   deliveryModel: Concentrated Team

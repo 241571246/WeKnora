@@ -1,0 +1,48 @@
+# Vone-weknora declarative built-in model configuration.
+#
+# API keys are never stored here. String values reference variables loaded
+# from the root `.env`. The embedding dimension is an integer and cannot use
+# ${ENV} interpolation.
+
+builtin_models:
+  - id: vone-default-chat
+    tenant_id: 10000
+    name: ${VONE_LLM_MODEL_NAME}
+    type: KnowledgeQA
+    source: remote
+    description: Vone-weknora DeepSeek V4 Flash
+    is_default: true
+    status: active
+    parameters:
+      base_url: ${VONE_LLM_BASE_URL}
+      api_key: ${VONE_LLM_API_KEY}
+      provider: ${VONE_LLM_PROVIDER}
+
+  - id: vone-default-embedding
+    tenant_id: 10000
+    name: ${VONE_EMBEDDING_MODEL_NAME}
+    type: Embedding
+    source: remote
+    description: Vone-weknora BGE-M3 embedding
+    is_default: true
+    status: active
+    parameters:
+      base_url: ${VONE_EMBEDDING_BASE_URL}
+      api_key: ${VONE_EMBEDDING_API_KEY}
+      provider: ${VONE_EMBEDDING_PROVIDER}
+      embedding_parameters:
+        dimension: 1024
+        truncate_prompt_tokens: 0
+
+  - id: vone-default-rerank
+    tenant_id: 10000
+    name: ${VONE_RERANK_MODEL_NAME}
+    type: Rerank
+    source: remote
+    description: Vone-weknora BGE reranker
+    is_default: true
+    status: active
+    parameters:
+      base_url: ${VONE_RERANK_BASE_URL}
+      api_key: ${VONE_RERANK_API_KEY}
+      provider: ${VONE_RERANK_PROVIDER}

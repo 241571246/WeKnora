@@ -16,7 +16,7 @@ actions:
   - id: ACT-2026-002
     relatedId: REQ-2026-001
     triggerSource: Plan Gate
-    nextAction: 确认 VONE-0.7.2.1 的真实测试身份、部署窗口和预估日期；目标版本已确认为 VONE-0.7.2.1。
+    nextAction: 本地候选部署窗口已完成；准备 B48 九类测试身份、范围化 API Key，并确认独立人工执行时间。
     owner: ROCKL
     createdAt: "2026-08-17T18:10:00+08:00"
     dueDate: "2026-08-20T18:00:00+08:00"
@@ -46,12 +46,12 @@ actions:
     owner: ROCKL
     createdAt: "2026-08-17T20:34:20+08:00"
     dueDate: "2026-09-07T18:00:00+08:00"
-    status: Open
-    completionEvidence: N/A
+    status: Done
+    completionEvidence: "Commit 3693b7990176217304bc921bd01f422a8f1d5a55; backend SHA-256 4D3C00EFFD5E423BBEDB11ADD94A6EDB6CB88467661902DE8F42423CE18951BB; frontend SHA-256 189E3FEC361611A21C8F3E365F34AD81FD317D09CE6A9A9A009CF6E92B83AC4A"
     escalationOwner: ROCKL
     escalateAt: "2026-09-08T18:00:00+08:00"
-    escalationStatus: Pending
-    escalationReason: D1-R1 技术实现与自动验证已通过，但 QA 候选件仍来自 +dirty 工作树，尚未形成可复现的不可变提交。
+    escalationStatus: N/A
+    escalationReason: N/A
   - id: ACT-2026-005
     relatedId: REQ-2026-001
     triggerSource: Implementation Admission

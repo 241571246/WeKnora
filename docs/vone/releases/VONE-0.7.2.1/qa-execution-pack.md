@@ -8,11 +8,14 @@ Record for every case: timestamp, actor user ID, tenant ID, KB ID, HTTP method/p
 
 ## 2. Candidate and environment preflight
 
+- Latest staging preflight: `b48-staging-preflight.md`; result `DEPLOYED_BLOCKED_FOR_B48_FIXTURES`. Matching candidates, VONE migration/reconciliation and `shadow` are active; the required identity matrix and scoped API key are not prepared.
+- Repeat the deterministic preflight with `validate-b48-staging.ps1`; do not start M01 until it returns exit code `0` and `B48_STAGING_PREFLIGHT=PASS`.
+
 - Backend candidate: `docs/vone/runtime/TASK-20260817-QA-ROCKL-01/backend/weknora-server`
-  - SHA-256: `D9793B497B18D3E45BA853DDAF3DCA66F9752945087B37CEA7169CB791E88896`
+  - SHA-256: `4D3C00EFFD5E423BBEDB11ADD94A6EDB6CB88467661902DE8F42423CE18951BB`
 - Frontend candidate: `docs/vone/runtime/TASK-20260817-QA-ROCKL-01/frontend/weknora-frontend-VONE-0.7.2.1-candidate1.zip`
-  - SHA-256: `C6761EC39DAACB0D6CBBDB63BDA0E5FB19314B486609B3130696368731583D33`
-- Source status: `9524f731+dirty`; rebuild from an authorized immutable commit before formal QA sign-off.
+  - SHA-256: `189E3FEC361611A21C8F3E365F34AD81FD317D09CE6A9A9A009CF6E92B83AC4A`
+- Source status: immutable local commit `3693b7990176217304bc921bd01f422a8f1d5a55`; backend readback `vcs.modified=false`. No push, tag or deployment is claimed.
 - Start with `WEKNORA_VONE_KB_ACL_MODE=shadow`; record `/api/v1/system/info` fields `kb_acl_mode`, `kb_acl_metrics`, `vone_db_version`, `vone_db_error`.
 - Run the read-only `reconciliation-postgresql.sql`; all anomaly counts must be zero and the retained `kb_shares` count must match the pre-migration record.
 - Switch to `enforce` only after shadow decisions match expected outcomes, then repeat all denial cases.
@@ -106,8 +109,8 @@ Expected denial is 403 without content leakage. A missing or cross-workspace res
 
 | Field | Value |
 |---|---|
-| Deployed immutable commit/tag | Pending |
-| Backend/frontend SHA-256 readback | Pending |
+| Deployed immutable commit/tag | Candidate commit `3693b7990176217304bc921bd01f422a8f1d5a55`; staging deployment pending |
+| Backend/frontend SHA-256 readback | Build-time hashes recorded above; staging readback pending |
 | Environment / deployment time | Pending |
 | Independent human QA name/code | Pending |
 | Executed cases / failures | Pending |

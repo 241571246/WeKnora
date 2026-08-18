@@ -10,14 +10,14 @@ Recorded: 2026-08-18
 | A1 | TECHNICAL PASS | B24-B30 | Real Agent/organization/API-key runtime matrix |
 | T1 | TECHNICAL PASS | B31-B35 | Browser interaction smoke |
 | U1 | TECHNICAL PASS | B36-B43 | Browser interaction and revoked-session UX smoke |
-| V1 | PARTIAL | B44-B47 and automated B49 pass | B48 real identities and independent L3 |
-| R1 | TECHNICALLY PREPARED, RELEASE BLOCKED | B50-B52; actual newer-upstream merge rehearsal PASS | V1 L3, distinct QA, acceptance and release authorization |
+| V1 | PARTIAL | B44-B47 and automated B49 pass; immutable candidates deployed locally in `shadow`; VONE migration/reconciliation PASS | Prepare B48 identity/API-key fixtures and execute independent L3 |
+| R1 | TECHNICALLY PREPARED, RELEASE BLOCKED | B50-B52; immutable scoped commit and clean candidate rebuild; actual newer-upstream merge rehearsal PASS | V1 L3, distinct QA or approved exception, acceptance and release authorization |
 
 ## Work-package result
 
 - `DONE (technical)`: B1-B47 and B49-B52.
 - `PENDING EXTERNAL`: B48 real-identity E2E and independent QA.
-- `RELEASE BLOCKED`: no unique release commit/build, distinct reviewer, business acceptance or release approval.
+- `RELEASE BLOCKED`: B48, distinct reviewer or approved exception, business acceptance and release approval remain open.
 
 ## Automated evidence
 
@@ -27,9 +27,12 @@ Recorded: 2026-08-18
 - PostgreSQL 17/ParadeDB upstream 0→79 plus VONE up/backfill/share-retention/down: PASS.
 - Upstream `main` merge rehearsal at `9b4f792a`: full Go PASS; targeted race PASS; frontend typecheck, 398/398 tests, i18n 11/11 and 6396-module build PASS.
 - Release manifest schema and package validator: PASS.
-- Local QA artifacts: Linux backend ELF SHA-256 `D9793B49...E88896`; frontend ZIP SHA-256 `C6761EC3...583D33`, ZIP integrity PASS. Both still require rebuild from an immutable scoped commit because the backend module marker is `+dirty`.
+- Immutable source: local commit `3693b7990176217304bc921bd01f422a8f1d5a55`; scoped range `9524f7310b8d5636307afc6365966ab513c19a1f..3693b7990176217304bc921bd01f422a8f1d5a55`; local staging deployed, no push/tag/production deployment claimed.
+- Clean QA artifacts: Linux backend ELF SHA-256 `4D3C00EF...951BB`, 334205112 bytes, `vcs.modified=false`; frontend ZIP SHA-256 `189E3FEC...AC4A`, 11217904 bytes, 181 safe entries and `index.html` present.
+- Clean-clone frontend rebuild: typecheck PASS, 347/347 tests PASS, i18n 11/11 PASS and 6353-module production build PASS. `npm ci` reported 8 dependency audit findings (2 moderate, 6 high); no lock-file-changing audit fix was applied.
 - Requirement evidence: `acceptance-evidence.md` maps AC-01 through AC-23 and keeps L3-only cases pending.
 - B48 execution handoff: `qa-execution-pack.md` defines identities, exact API cases, expected status, audit/metrics evidence and sign-off fields.
+- B48 staging preflight: `b48-staging-preflight.md` proves matching candidate images/hash, healthy HTTP, ACL `shadow`, VONE ledger 1 clean, reconciliation and retained `kb_shares=2`; four users and zero API keys still cannot satisfy the declared matrix.
 
 ## Honest closure boundary
 

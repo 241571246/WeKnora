@@ -1,0 +1,39 @@
+# Vone-weknora local Docker overlay.
+#
+# This file does not start anything by itself. When deployment is approved,
+# combine it with the upstream compose file:
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.vone.yml ...
+
+name: ${COMPOSE_PROJECT_NAME:-vone-weknora}
+
+services:
+  frontend:
+    image: vone/weknora-ui:${VONE_UI_IMAGE_TAG:-0.7.2-vone.2}
+
+  app:
+    image: vone/weknora-app:${VONE_IMAGE_TAG:-0.7.2-vone.1}
+    build:
+      args:
+        GOPROXY_ARG: ${GOPROXY_ARG:-https://goproxy.cn|https://proxy.golang.org|direct}
+        APK_MIRROR_ARG: ${APT_MIRROR:-https://mirrors.tuna.tsinghua.edu.cn}
+    volumes:
+      - ./config/builtin_models.vone.yaml:/app/config/builtin_models.yaml:ro
+    environment:
+      - BUILTIN_MODELS_CONFIG=/app/config/builtin_models.yaml
+      - WEKNORA_SANDBOX_DOCKER_IMAGE=vone/weknora-sandbox:${VONE_IMAGE_TAG:-0.7.2-vone.1}
+
+  docreader:
+    image: vone/weknora-docreader:${VONE_IMAGE_TAG:-0.7.2-vone.1}
+    build:
+      args:
+        APT_MIRROR: ${APT_MIRROR:-https://mirrors.tuna.tsinghua.edu.cn}
+
+  sandbox:
+    image: vone/weknora-sandbox:${VONE_IMAGE_TAG:-0.7.2-vone.1}
+
+  redis:
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:

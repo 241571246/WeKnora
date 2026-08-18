@@ -33,6 +33,8 @@ requirements:
     qaIndependence:
       gate: EXCEPTION REQUIRED
       reason: Technical, maintenance and QA assignments normalize to the same ROCKL identity; this is not independent QA.
+      exceptionApprover: Tim / T001
+      evidence: Stable employee code recorded; explicit scoped approval evidence pending.
     releaseId: VONE-0.7.2.1
     releaseAuthorization: BLOCKED
     businessAcceptanceEvidence: Pending

@@ -56,7 +56,7 @@
 - Contributors: Codex Agent
 - Branch: custom/v0.7.2
 - Updated By: vone-workflow-orchestrator
-- Handoff To: distinct human QA reviewer / ROCKL
+- Handoff To: Tim / T001 exception approver / distinct human QA reviewer / ROCKL
 
 ## UI Skill Selection
 
@@ -94,11 +94,11 @@
 
 ## Last Updated
 
-- 2026-08-18 01:50
+- 2026-08-18 10:27
 
 ## Recovery Point
 
-- Resume at B48 using the frozen AC-01 through AC-23 matrix and the QA execution pack; do not relabel self-verification as independent QA.
+- Immutable candidates from `3693b7990176217304bc921bd01f422a8f1d5a55` are deployed locally in `shadow`; backend hash, VONE ledger 1, reconciliation and retained `kb_shares=2` passed. Resume at B48 fixture preparation: current four users and zero API keys remain insufficient; Tim / T001 has not yet supplied explicit exception approval evidence.
 
 ## Completed Skills
 
@@ -108,7 +108,7 @@
 
 ## Blockers
 
-- B48 needs deployed real identities and a distinct human QA reviewer; business acceptance and release authorization are also pending.
+- B48 needs prepared real identities, a scoped API key and a distinct human QA reviewer or explicit Tim / T001 exception approval; business acceptance and release authorization are also pending.
 
 ## Notes
 

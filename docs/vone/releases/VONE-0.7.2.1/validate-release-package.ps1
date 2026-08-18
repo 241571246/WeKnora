@@ -16,7 +16,10 @@ function Require-File([string]$RelativePath) {
 
 $manifest = Require-File 'docs\vone\releases\VONE-0.7.2.1\release-manifest.md'
 $runbook = Require-File 'docs\vone\releases\VONE-0.7.2.1\deployment-rollback-runbook.md'
+$initialDeploymentGuide = Require-File 'docs\vone\releases\VONE-0.7.2.1\initial-deployment-guide.md'
 $reconciliation = Require-File 'docs\vone\releases\VONE-0.7.2.1\reconciliation-postgresql.sql'
+$b48Preflight = Require-File 'docs\vone\releases\VONE-0.7.2.1\b48-staging-preflight.md'
+$b48Validator = Require-File 'docs\vone\releases\VONE-0.7.2.1\validate-b48-staging.ps1'
 $upMigration = Require-File 'migrations\vone\versioned\000001_kb_acl_and_collections.up.sql'
 $downMigration = Require-File 'migrations\vone\versioned\000001_kb_acl_and_collections.down.sql'
 $sqliteMigration = Require-File 'migrations\vone\sqlite\000001_kb_acl_and_collections.up.sql'
@@ -68,6 +71,12 @@ if ($failures.Count -eq 0) {
         }
     }
 
+    try {
+        $null = [scriptblock]::Create((Get-Content -LiteralPath $b48Validator -Raw))
+    } catch {
+        $failures.Add("B48 staging validator has invalid PowerShell syntax: $($_.Exception.Message)")
+    }
+
     Push-Location $workspace
     try {
         $upstreamMigrationChanges = @(git diff --name-only -- migrations ':!migrations/vone')
@@ -89,7 +98,7 @@ if ($failures.Count -gt 0) {
 }
 
 Write-Output 'RELEASE_PACKAGE_VALIDATION=PASS'
-foreach ($path in @($manifest,$runbook,$reconciliation,$upMigration,$downMigration,$sqliteMigration,$sqliteDownMigration)) {
+foreach ($path in @($manifest,$runbook,$initialDeploymentGuide,$reconciliation,$b48Preflight,$b48Validator,$upMigration,$downMigration,$sqliteMigration,$sqliteDownMigration)) {
     $hash = Get-FileHash -LiteralPath $path -Algorithm SHA256
     Write-Output ("SHA256 {0} {1}" -f $hash.Hash, (Resolve-Path -Relative $path))
 }

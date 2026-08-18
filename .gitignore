@@ -27,6 +27,7 @@ tmp/
 temp/
 logs/
 *.pid
+runtime/
 
 WeKnora
 WeKnora-lite

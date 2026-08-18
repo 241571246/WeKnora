@@ -6,7 +6,7 @@
 
 ## Last Updated
 
-- 2026-08-18 01:50
+- 2026-08-18 10:27
 
 ## Current Stage
 
@@ -25,15 +25,21 @@
 - [x] L1/L2、迁移、回滚包与 85-commit 上游合并演练完成；B48 实名 E2E、独立人工 QA、业务验收和发布授权未完成。
 - [x] Task-related L1/L2 evidence recorded in `verification.md`.
 - [x] Built and checksummed a Linux backend QA candidate and frontend ZIP; added an executable B48 QA pack.
-- [x] Rebuilt the backend dirty candidate after the Agent-intersection correction and replaced the stale checksum in the QA/release evidence.
+- [x] Created scoped local commit `3693b7990176217304bc921bd01f422a8f1d5a55`, preserving the seven excluded deployment/configuration files.
+- [x] Rebuilt backend and frontend candidates from isolated clean clones; backend readback is `vcs.modified=false` and both artifact hashes are recorded in the release manifest.
+- [x] Change-evidence snapshot completed; semantic result is PASS_WITH_NOTES because seven registered Tasks intentionally share one Requirement-level commit and Actual Effort is not recorded.
+- [x] Completed read-only B48 staging preflight: runtime is healthy but running image hashes do not match the candidates, VONE tables are absent, ACL shadow mode is unset and the current four users are insufficient for the declared identity matrix.
+- [x] Added and executed `validate-b48-staging.ps1`; parse PASS and expected exit code 2/BLOCKED with seven deterministic reason codes.
+- [x] Authorized local staging replacement completed with recoverable PostgreSQL backup; matching backend/frontend candidates are active in `shadow`, VONE ledger 1 is clean, reconciliation has zero anomaly rows and `kb_shares=2` is retained.
+- [x] Post-deployment validator reduced the blocker set from seven to two: insufficient distinct identities and missing scoped API-key fixture.
 
 ## In Progress
 
-- [ ] Prepare and execute B48 with real separate identities.
+- [ ] Prepare the B48 identities and scoped API key before executing the matrix.
 
 ## Next Step
 
-- Authorize an immutable scoped source commit, rebuild the candidates from that SHA, assign a distinct human reviewer, then execute and sign `qa-execution-pack.md`.
+- Prepare WSO/O1/O2/ED/DV/AI/CU/OUT/ORG fixtures and a scoped API key, capture authenticated Owner diagnostics, then execute `qa-execution-pack.md`; Tim / T001 must separately provide explicit scoped exception approval evidence or an independent reviewer must be assigned.
 
 ## Changed Files
 
@@ -46,4 +52,4 @@
 
 ## Recovery Note
 
-- Candidate hashes exist, but the embedded backend module marker is `9524f731+dirty`; formal QA sign-off requires a rebuild from the authorized immutable commit.
+- Immutable clean candidates from `3693b7990176217304bc921bd01f422a8f1d5a55` are running locally in `shadow`; resume at B48 fixtures. Tim / T001 is only a nominated exception approver until explicit approval evidence is recorded.
