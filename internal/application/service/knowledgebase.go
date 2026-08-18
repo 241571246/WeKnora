@@ -48,6 +48,8 @@ type knowledgeBaseService struct {
 	syncLogRepo     interfaces.SyncLogRepository
 	dsScheduler     *datasource.Scheduler
 	audit           interfaces.AuditLogService
+	kbMembers       interfaces.KBMembershipService
+	authorizer      interfaces.KBAuthorizer
 }
 
 // NewKnowledgeBaseService creates a new knowledge base service
@@ -70,6 +72,8 @@ func NewKnowledgeBaseService(repo interfaces.KnowledgeBaseRepository,
 	syncLogRepo interfaces.SyncLogRepository,
 	dsScheduler *datasource.Scheduler,
 	audit interfaces.AuditLogService,
+	kbMembers interfaces.KBMembershipService,
+	authorizer interfaces.KBAuthorizer,
 ) interfaces.KnowledgeBaseService {
 	return &knowledgeBaseService{
 		repo:            repo,
@@ -91,6 +95,8 @@ func NewKnowledgeBaseService(repo interfaces.KnowledgeBaseRepository,
 		syncLogRepo:     syncLogRepo,
 		dsScheduler:     dsScheduler,
 		audit:           audit,
+		kbMembers:       kbMembers,
+		authorizer:      authorizer,
 	}
 }
 
@@ -155,7 +161,7 @@ func (s *knowledgeBaseService) CreateKnowledgeBase(ctx context.Context,
 
 	logger.Infof(ctx, "Creating knowledge base, ID: %s, tenant ID: %d, name: %s", kb.ID, kb.TenantID, kb.Name)
 
-	if err := s.repo.CreateKnowledgeBase(ctx, kb); err != nil {
+	if err := s.createKnowledgeBaseWithOwner(ctx, kb); err != nil {
 		logger.ErrorWithFields(ctx, err, map[string]interface{}{
 			"knowledge_base_id": kb.ID,
 			"tenant_id":         kb.TenantID,
@@ -356,6 +362,43 @@ func (s *knowledgeBaseService) ListKnowledgeBases(ctx context.Context) ([]*types
 		})
 		return nil, err
 	}
+	userID, _ := types.UserIDFromContext(ctx)
+	role := types.TenantRoleFromContext(ctx)
+	aclMode := types.CurrentKBACLMode()
+	if role != types.TenantRoleOwner && aclMode != types.KBACLModeOff {
+		visibleIDs, accessErr := s.authorizer.ListAccessibleKBIDs(ctx, tenantID, userID, role)
+		if accessErr != nil {
+			return nil, accessErr
+		}
+		visible := make(map[string]struct{}, len(visibleIDs))
+		for _, id := range visibleIDs {
+			visible[id] = struct{}{}
+		}
+		filtered := make([]*types.KnowledgeBase, 0, len(kbs))
+		for _, kb := range kbs {
+			if _, ok := visible[kb.ID]; ok {
+				filtered = append(filtered, kb)
+			}
+		}
+		if aclMode == types.KBACLModeEnforce {
+			kbs = filtered
+		} else if len(filtered) != len(kbs) {
+			logger.Infof(ctx, "[kb_acl_metric] shadow_list_hidden=%d tenant=%d user=%s", len(kbs)-len(filtered), tenantID, userID)
+		}
+	}
+	for _, kb := range kbs {
+		if aclMode == types.KBACLModeOff {
+			continue
+		}
+		decision, accessErr := s.authorizer.Authorize(ctx, interfaces.KBPolicyRequest{
+			TenantID: tenantID, KBID: kb.ID, UserID: userID, TenantRole: role,
+			Capability: types.KBCapabilityMetadataRead,
+		})
+		if accessErr != nil {
+			return nil, accessErr
+		}
+		kb.MyCapabilities = decision.Capabilities
+	}
 
 	// Query knowledge count and chunk count for each knowledge base
 	for _, kb := range kbs {
@@ -399,7 +442,7 @@ func (s *knowledgeBaseService) ListKnowledgeBases(ctx context.Context) ([]*types
 	// only path that needs to honour the caller's personal pin set;
 	// agent/share/IM callers go through ListKnowledgeBasesByTenantID
 	// which also enriches but keys off the user in their own context.
-	if userID, ok := types.UserIDFromContext(ctx); ok && userID != "" {
+	if userID != "" {
 		s.applyUserKBPins(ctx, tenantID, userID, kbs)
 	}
 	return kbs, nil
@@ -1190,7 +1233,7 @@ func (s *knowledgeBaseService) CopyKnowledgeBase(ctx context.Context,
 			targetKB.CreatorID = uid
 		}
 		targetKB.EnsureDefaults()
-		if err := s.repo.CreateKnowledgeBase(ctx, targetKB); err != nil {
+		if err := s.createKnowledgeBaseWithOwner(ctx, targetKB); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -1251,7 +1294,7 @@ func (s *knowledgeBaseService) DuplicateKnowledgeBase(
 		}
 	}
 
-	if err := s.repo.CreateKnowledgeBase(ctx, targetKB); err != nil {
+	if err := s.createKnowledgeBaseWithOwner(ctx, targetKB); err != nil {
 		return nil, err
 	}
 	recordKBActivity(ctx, s.audit, tenantID, targetKB.ID, types.AuditActionKBDuplicated,
@@ -1259,6 +1302,32 @@ func (s *knowledgeBaseService) DuplicateKnowledgeBase(
 			"source_kb_id": sourceKB.ID, "name": targetKB.Name,
 		})
 	return targetKB, nil
+}
+
+// createKnowledgeBaseWithOwner keeps the legacy creator field and the new ACL
+// owner row aligned. The compensating delete is only reached before any child
+// content exists; it prevents a partially-created KB from becoming invisible
+// and ownerless when the ACL write fails.
+func (s *knowledgeBaseService) createKnowledgeBaseWithOwner(ctx context.Context, kb *types.KnowledgeBase) error {
+	if err := s.repo.CreateKnowledgeBase(ctx, kb); err != nil {
+		return err
+	}
+	if kb.CreatorID == "" || s.kbMembers == nil {
+		return nil
+	}
+	membership := &types.KBMembership{
+		TenantID: kb.TenantID,
+		KBID:     kb.ID,
+		UserID:   kb.CreatorID,
+		Role:     types.KBMemberRoleOwner,
+	}
+	if err := s.kbMembers.Create(ctx, kb.CreatorID, membership, nil); err != nil {
+		if cleanupErr := s.repo.DeleteKnowledgeBase(ctx, kb.ID); cleanupErr != nil {
+			logger.Errorf(ctx, "failed to compensate KB creation after owner ACL error: kb=%s acl_err=%v cleanup_err=%v", kb.ID, err, cleanupErr)
+		}
+		return fmt.Errorf("create knowledge-base owner membership: %w", err)
+	}
+	return nil
 }
 
 func duplicateKBCopySuffix(locale string) string {

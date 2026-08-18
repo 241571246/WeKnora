@@ -9,7 +9,7 @@ import "highlight.js/styles/github.css";
 import mermaid from "mermaid";
 import { onMounted, ref, nextTick, onUnmounted, watch, computed } from "vue";
 import {
-  downKnowledgeDetails, deleteGeneratedQuestion, getChunkByIdOnly, previewKnowledgeFile,
+  downKnowledgeDetails, deleteDocumentChunk, deleteGeneratedQuestion, getChunkByIdOnly, previewKnowledgeFile,
   updateDocumentChunk, listChunkRevisions, revertDocumentChunk, updateKnowledgeMetadata,
   regenerateKnowledgeSummary, upsertGeneratedQuestion, regenerateGeneratedQuestions, getKnowledgeDetails,
 } from "@/api/knowledge-base/index";
@@ -32,10 +32,14 @@ const authStore = useAuthStore();
 // 传下来（包含 KB creator / Admin / 组织分享 editor 三种来源），未
 // 传时按更严格的 Admin 兜底，避免 Viewer 看到一个会 403 的入口。
 const canDeleteGeneratedQuestion = computed(() => {
+  if (typeof props.canEditContent === 'boolean') return props.canEditContent;
   if (props.canEditKB === true) return true;
   return authStore.hasRole('admin');
 });
-const canEditContent = canDeleteGeneratedQuestion;
+const canEditContent = computed(() => typeof props.canEditContent === 'boolean'
+  ? props.canEditContent
+  : canDeleteGeneratedQuestion.value);
+const canDeleteChunks = computed(() => props.canDeleteChunks === true);
 
 type MetadataValueType = 'text' | 'number' | 'boolean' | 'null';
 interface MetadataDraftRow {
@@ -210,7 +214,7 @@ mermaid.initialize({
     topPadding: 50
   }
 });
-const props = defineProps(["visible", "details", "knowledgeType", "sourceInfo", "canEditKB", "canDownloadKB", "parse_status", "kbId"]);
+const props = defineProps(["visible", "details", "knowledgeType", "sourceInfo", "canEditKB", "canEditContent", "canDeleteChunks", "canDownloadKB", "canPreviewDocument", "canPreviewChunks", "parse_status", "kbId"]);
 const emit = defineEmits(["closeDoc", "getDoc", "questionDeleted", "summaryStateChange"]);
 
 const applySummaryState = (summaryStatus?: string, description?: string) => {
@@ -512,6 +516,8 @@ let url = ref('')
 // 视图模式：chunks / merged / preview
 // file 类型默认「预览」，URL / 手动创建 默认「全文」
 const viewMode = ref<'chunks' | 'merged' | 'preview'>('merged');
+const canPreviewChunks = computed(() => props.canPreviewChunks !== false);
+const canPreviewDocument = computed(() => props.canPreviewDocument !== false);
 
 // 合并后的文档内容（在下方通过 computed 定义）
 
@@ -764,13 +770,15 @@ watch(() => props.details?.id, (newId) => {
     audioBlobUrl.value = '';
   }
   if (!newId) return;
-  if (isAudioFile(props.details?.file_type)) {
+  if (canPreviewDocument.value && isAudioFile(props.details?.file_type)) {
     viewMode.value = 'merged'; // 音频默认全文视图，播放器已内嵌
     loadAudioPreview();
-  } else if (props.details?.type === 'file' && canPreview()) {
+  } else if (canPreviewDocument.value && props.details?.type === 'file' && canPreview()) {
     viewMode.value = 'preview';
-  } else {
+  } else if (canPreviewChunks.value) {
     viewMode.value = 'merged';
+  } else {
+    viewMode.value = 'preview';
   }
 });
 
@@ -1433,6 +1441,21 @@ const regenerateQuestions = async (item: any) => {
 
 // 删除中的状态
 const deletingQuestion = ref<{ chunkIndex: number; questionId: string } | null>(null);
+const deletingChunkId = ref('');
+
+const handleDeleteChunk = async (item: any) => {
+  if (!canDeleteChunks.value || !props.details?.id || !item?.id) return;
+  deletingChunkId.value = item.id;
+  try {
+    await deleteDocumentChunk(props.details.id, item.id);
+    MessagePlugin.success(t('knowledgeBase.chunkDeleted'));
+    emit('getDoc');
+  } catch (error: any) {
+    MessagePlugin.error(error?.message || t('knowledgeBase.chunkDeleteFailed'));
+  } finally {
+    deletingChunkId.value = '';
+  }
+};
 
 // 删除生成的问题
 const handleDeleteQuestion = async (item: any, chunkIndex: number, question: GeneratedQuestion) => {
@@ -1832,17 +1855,17 @@ const handleDetailsScroll = () => {
               </span>
             </div>
             <div class="view-mode-buttons">
-              <t-button v-if="canPreview()" size="small" :variant="viewMode === 'preview' ? 'base' : 'outline'"
+              <t-button v-if="canPreviewDocument && canPreview()" size="small" :variant="viewMode === 'preview' ? 'base' : 'outline'"
                 :theme="viewMode === 'preview' ? 'primary' : 'default'" @click="viewMode = 'preview'"
                 class="view-mode-btn">
                 {{ $t('preview.tab') }}
               </t-button>
-              <t-button v-if="!canPreview()" size="small" :variant="viewMode === 'merged' ? 'base' : 'outline'"
+              <t-button v-if="canPreviewChunks && !canPreview()" size="small" :variant="viewMode === 'merged' ? 'base' : 'outline'"
                 :theme="viewMode === 'merged' ? 'primary' : 'default'" @click="viewMode = 'merged'"
                 class="view-mode-btn">
                 {{ $t('knowledgeBase.viewMerged') }}
               </t-button>
-              <t-button size="small" :variant="viewMode === 'chunks' ? 'base' : 'outline'"
+              <t-button v-if="canPreviewChunks" size="small" :variant="viewMode === 'chunks' ? 'base' : 'outline'"
                 :theme="viewMode === 'chunks' ? 'primary' : 'default'" @click="viewMode = 'chunks'"
                 class="view-mode-btn">
                 {{ $t('knowledgeBase.viewChunks') }}
@@ -1851,7 +1874,7 @@ const handleDetailsScroll = () => {
           </div>
 
           <!-- 音频播放器（音频文件时固定显示在内容区顶部） -->
-          <div v-if="isAudioFile(details.file_type)" class="audio-player-section">
+          <div v-if="canPreviewDocument && isAudioFile(details.file_type)" class="audio-player-section">
             <div v-if="audioLoading" class="audio-loading">
               <t-loading size="small" />
               <span>{{ $t('preview.audioLoading') }}</span>
@@ -1862,13 +1885,13 @@ const handleDetailsScroll = () => {
           </div>
 
           <!-- 合并视图 -->
-          <div v-if="viewMode === 'merged'">
+          <div v-if="canPreviewChunks && viewMode === 'merged'">
             <div v-if="!mergedContent" class="no_content">{{ $t('common.noData') }}</div>
             <div v-else class="md-content" v-html="processMarkdown(mergedContent)"></div>
           </div>
 
           <!-- 分块视图 -->
-          <div v-else-if="viewMode === 'chunks'">
+          <div v-else-if="canPreviewChunks && viewMode === 'chunks'">
             <div v-if="!processedChunks.length" class="no_content">{{ $t('common.noData') }}</div>
             <div v-else class="chunk-list">
               <div class="chunk-item" :class="{ 'chunk-item--disabled': !chunk.original.is_enabled }"
@@ -2093,6 +2116,16 @@ const handleDetailsScroll = () => {
                           </div>
                         </template>
                       </t-popup>
+                    </template>
+                    <t-popconfirm v-if="canDeleteChunks" theme="warning"
+                      :content="$t('knowledgeBase.confirmDeleteChunk')"
+                      @confirm="handleDeleteChunk(chunk.original)">
+                      <t-button class="icon-action-btn" theme="danger" variant="text" shape="square" size="small"
+                        :loading="deletingChunkId === chunk.original.id">
+                        <template #icon><t-icon name="delete" size="15px" /></template>
+                      </t-button>
+                    </t-popconfirm>
+                    <template v-if="canEditContent">
                       <span class="chunk-toolbar-divider" />
                       <t-tooltip
                         :content="chunk.original.is_enabled ? $t('knowledgeBase.disableChunk') : $t('knowledgeBase.enableChunk')"
@@ -2125,10 +2158,11 @@ const handleDetailsScroll = () => {
           </div>
 
           <!-- 文档预览视图 -->
-          <div v-else-if="viewMode === 'preview'">
+          <div v-else-if="canPreviewDocument && viewMode === 'preview'">
             <DocumentPreview :knowledgeId="details.id" :fileType="details.file_type" :fileName="details.title"
               :active="viewMode === 'preview'" />
           </div>
+          <t-empty v-else :description="$t('kbAcl.permissionRevoked')" />
         </section>
       </div>
 

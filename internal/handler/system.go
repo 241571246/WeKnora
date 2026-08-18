@@ -288,7 +288,11 @@ type GetSystemInfoResponse struct {
 	// the most recent startup migration attempt failed. Empty when migrations
 	// succeeded; non-empty values let the frontend surface a troubleshooting
 	// banner instead of silently hiding the DB version row (see issue #1319).
-	DBMigrationError string `json:"db_migration_error,omitempty"`
+	DBMigrationError string                    `json:"db_migration_error,omitempty"`
+	VONEDBVersion    string                    `json:"vone_db_version,omitempty"`
+	VONEDBError      string                    `json:"vone_db_error,omitempty"`
+	KBACLMode        string                    `json:"kb_acl_mode"`
+	KBACLMetrics     types.KBACLMetricSnapshot `json:"kb_acl_metrics"`
 	// StartedAt is the server process boot time (RFC3339, UTC).
 	StartedAt string `json:"started_at,omitempty"`
 	// UptimeSeconds is seconds elapsed since process start.
@@ -343,6 +347,19 @@ func (h *SystemHandler) GetSystemInfo(c *gin.Context) {
 		// the row and shows the troubleshooting banner.
 		dbVersion = "unknown"
 	}
+	voneMigrationErr := database.CachedVONEMigrationError()
+	var voneDBVersion string
+	if ver, dirty, ok := database.CachedVONEMigrationVersion(); ok {
+		voneDBVersion = fmt.Sprintf("%d", ver)
+		if dirty {
+			voneDBVersion += " (dirty)"
+		}
+		if voneMigrationErr != "" {
+			voneDBVersion += " (failed)"
+		}
+	} else if voneMigrationErr != "" {
+		voneDBVersion = "unknown"
+	}
 
 	var startedAt string
 	var uptimeSec int64
@@ -363,6 +380,10 @@ func (h *SystemHandler) GetSystemInfo(c *gin.Context) {
 		MinioEnabled:        minioEnabled,
 		DBVersion:           dbVersion,
 		DBMigrationError:    dbMigrationErr,
+		VONEDBVersion:       voneDBVersion,
+		VONEDBError:         voneMigrationErr,
+		KBACLMode:           string(types.CurrentKBACLMode()),
+		KBACLMetrics:        types.CurrentKBACLMetricSnapshot(),
 		StartedAt:           startedAt,
 		UptimeSeconds:       uptimeSec,
 	}

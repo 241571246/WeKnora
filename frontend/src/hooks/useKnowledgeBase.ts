@@ -179,7 +179,7 @@ export default function (knowledgeBaseId?: string) {
         uploadInput.value.value = "";
       });
   };
-  const getCardDetails = (item: any) => {
+  const getCardDetails = (item: any, loadChunks = true) => {
     Object.assign(details, {
       title: "",
       time: "",
@@ -219,7 +219,7 @@ export default function (knowledgeBaseId?: string) {
         }
       })
       .catch(() => {});
-    getfDetails(item.id, 1);
+    if (loadChunks) getfDetails(item.id, 1);
   };
   
   const getfDetails = (id: string, page: number) => {

@@ -140,6 +140,7 @@ type rbacGuards struct {
 	chunkService      middleware.ChunkLookup
 	kbShareService    interfaces.KBShareService
 	agentShareService interfaces.AgentShareService
+	kbAuthorizer      interfaces.KBAuthorizer
 
 	// apiKeyAuthorizer is the single source of truth for which routes an
 	// X-API-Key principal may call. Routes opt in via the apiKeyGroup
@@ -162,6 +163,7 @@ func newRBACGuards(
 	chunkService interfaces.ChunkService,
 	kbShareService interfaces.KBShareService,
 	agentShareService interfaces.AgentShareService,
+	kbAuthorizer interfaces.KBAuthorizer,
 ) *rbacGuards {
 	g := &rbacGuards{cfg: cfg, apiKeyAuthorizer: middleware.NewAPIKeyRouteAuthorizer()}
 	if kbHandler != nil {
@@ -186,7 +188,24 @@ func newRBACGuards(
 	g.chunkService = chunkService
 	g.kbShareService = kbShareService
 	g.agentShareService = agentShareService
+	g.kbAuthorizer = kbAuthorizer
 	return g
+}
+
+func (g *rbacGuards) KBCapability(param string, capability types.KBCapability) gin.HandlerFunc {
+	return middleware.RequireKBCapability(middleware.KBIDFromParam(param), capability, g.kbAuthorizer)
+}
+
+func (g *rbacGuards) KBCapabilityFromKnowledgeID(param string, capability types.KBCapability) gin.HandlerFunc {
+	return middleware.RequireKBCapability(
+		middleware.KBIDFromKnowledgeIDParam(param, g.knowledgeService), capability, g.kbAuthorizer,
+	)
+}
+
+func (g *rbacGuards) KBCapabilityFromChunkID(param string, capability types.KBCapability) gin.HandlerFunc {
+	return middleware.RequireKBCapability(
+		middleware.KBIDFromChunkIDParam(param, g.chunkService), capability, g.kbAuthorizer,
+	)
 }
 
 // Role-only guards — pure RequireRole convenience wrappers, named after

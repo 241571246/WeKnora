@@ -1,0 +1,66 @@
+schemaVersion: 3
+projectId: PRJ-WEKNORA-VONE
+projectName: WeKnora 0.7.2 Standard 定制项目
+status: Active
+sourceOfTruth: Docs
+externalLink: N/A
+timezone: Asia/Singapore
+updatedAt: "2026-08-18T01:24:46+08:00"
+targetRelease: VONE-0.7.2.1
+owners:
+  project: ROCKL
+  technical: ROCKL
+  maintenanceDeveloper: ROCKL
+  qa: RockL
+  qaSecondReviewer: TBD
+  qaExceptionApprover: "Tim (candidate; stable employee code and approval evidence pending)"
+taskSource:
+  type: Team Task Directories
+  location: tasks
+  lastReconciledAt: "2026-08-18T01:24:46+08:00"
+assurance:
+  modelVersion: 2
+  deliveryModel: Concentrated Team
+  verificationMode: Mixed
+  policy: N/A
+  riskAcceptanceOwner: ROCKL
+  controls: Backend default-deny tests plus a distinct human review or scoped exception are required before release.
+  ownerAssignmentGate: PASS
+  qaIndependenceGate: EXCEPTION REQUIRED
+healthPolicy:
+  staleDays:
+    Draft: 7
+    Ready: 5
+    Planned: 5
+    In Progress: 3
+    Pending QA: 2
+  dueRiskBufferDays: 2
+slaPolicy:
+  qaExceptionDecisionBusinessDays: 2
+  actionEscalationBusinessDays: 1
+customerPolicy:
+  required: false
+measurementPolicy:
+  schemaVersion: 1
+  pilotStartAt: null
+  pilotWeeks: 4
+  pilotCompletedItems: 30
+  legacyUnknownAllowed: true
+  performanceUse: Team Process Diagnostics
+  personalScoring: Prohibited
+  reworkEscalationCount: 3
+  sameCriterionFailureCount: 2
+charter:
+  goal: 在保持 WeKnora 上游可持续升级的前提下，实现工作空间内知识库树形管理、成员协作和后端强制的细粒度权限控制。
+  scope: WeKnora 0.7.2 Standard 的知识库集合树、知识库所有权与成员权限、AI 检索授权、审计、存量迁移和升级兼容。
+  nonScope: 本期不实现文件夹级成员授权、组织部门授权、集合权限继承、同库多集合挂载、项目级统一 AI 搜索和外部 IAM 集成。
+  successMetrics: 未授权知识库及其文件详情不可见；授权能力逐项生效；存量知识库无孤儿所有者；上游升级可通过独立定制迁移和薄集成层完成合并。
+  releaseCadence: VONE-0.7.2.1 controlled release; date pending capacity and deployment-window confirmation
+dingTalkIntake:
+  newCandidates: 0
+  needInfo: 0
+  readyForReview: 0
+  amendmentPending: 0
+  conflict: 0
+  lastSyncAt: null
+  syncRunId: null

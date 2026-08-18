@@ -371,6 +371,8 @@ func (h *ChunkHandler) DeleteChunk(c *gin.Context) {
 		c.Error(errors.NewInternalServerError(err.Error()))
 		return
 	}
+	auditKBHTTPAction(c, types.AuditActionChunkDeleted, chunk.KnowledgeBaseID,
+		"chunk", chunk.ID, map[string]any{"knowledge_id": chunk.KnowledgeID})
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -400,11 +402,16 @@ func (h *ChunkHandler) DeleteChunksByKnowledgeID(c *gin.Context) {
 		c.Error(errors.NewBadRequestError("Knowledge ID cannot be empty"))
 		return
 	}
+	knowledge, _ := h.kgService.GetKnowledgeByID(ctx, knowledgeID)
 
 	if err := h.service.DeleteChunksByKnowledgeID(ctx, knowledgeID); err != nil {
 		logger.ErrorWithFields(ctx, err, nil)
 		c.Error(errors.NewInternalServerError(err.Error()))
 		return
+	}
+	if knowledge != nil {
+		auditKBHTTPAction(c, types.AuditActionChunkBatchDeleted, knowledge.KnowledgeBaseID,
+			"knowledge", knowledgeID, map[string]any{"scope": "all_chunks"})
 	}
 
 	c.JSON(http.StatusOK, gin.H{

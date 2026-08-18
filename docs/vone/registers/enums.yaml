@@ -1,0 +1,39 @@
+schemaVersion: 1
+requirementStatuses: [Draft, Ready, Planned, In Progress, Pending QA, QA Passed, Released, Closed, Blocked, Deferred, Cancelled]
+bugStatuses: [Draft, Triaged, Planned, In Progress, Pending QA, Verified, Released, Closed, Blocked, Deferred, Cancelled, Rejected, Duplicate]
+milestoneStatuses: [Planned, In Progress, Achieved, Cancelled]
+healthStates: [HEALTHY, AT_RISK, BLOCKED, STALE]
+gateStates: [PASS, PARTIAL, BLOCKED, PENDING, N/A]
+qaIndependenceStates: [PASS, EXCEPTION REQUIRED, EXCEPTION APPROVED, POLICY APPROVED, BLOCKED]
+priorities: [P0, P1, P2, P3]
+riskStates: [Low, Medium, High, Critical]
+severityStates: [Low, Medium, High, Critical]
+foundInStates: [Development, QA, UAT, Production]
+attributionStates: [Confirmed, Probable, Unknown, Not Applicable]
+commitmentTypes: [Contractual, Paid Change, Customer Request, Product Roadmap, Internal Optimization]
+processProfiles: [Fast, Standard, Controlled, Emergency, Not Recorded]
+complexityStatuses: [Assessed, Not Recorded, Not Assessed]
+complexitySizes: [XS, S, M, L, XL, Not Recorded]
+executionModels: [Human-led, Single AI Agent, Parallel AI Agents, Hybrid, Not Recorded]
+measurementDataStatuses: [Active, Complete, Not Recorded]
+measurementTimeBasis: [Telemetry, Manual, Recovered, Unknown]
+measurementConfidence: [High, Medium, Low]
+reworkCauses: [REQUIREMENT_UNCLEAR, REQUIREMENT_CHANGED, ACCEPTANCE_CRITERIA_MISSING, CONTEXT_INSUFFICIENT, EXECUTION_OUTPUT_INCORRECT, TECHNICAL_DESIGN_GAP, HUMAN_REVIEW_MISS, TEST_COVERAGE_GAP, ENV_DATA_ISSUE, EXTERNAL_DEPENDENCY_CHANGE]
+reworkAttributionConfidence: [High, Medium, Low]
+closureGapOrder:
+  - REQUIREMENT_READY_MISSING
+  - BUG_EVIDENCE_MISSING
+  - PLAN_READY_MISSING
+  - IMPLEMENTATION_ADMISSION_BLOCKED
+  - TECHNICAL_VERIFICATION_MISSING
+  - QA_HANDOFF_MISSING
+  - QA_EVIDENCE_MISSING
+  - QA_INDEPENDENCE_BLOCKED
+  - REGRESSION_EVIDENCE_MISSING
+  - RELEASE_ID_MISSING
+  - RELEASE_AUTHORIZATION_BLOCKED
+  - BUSINESS_ACCEPTANCE_PENDING
+  - REPORTER_CONFIRMATION_PENDING
+  - TASK_STATE_DRIFT
+  - NEXT_ACTION_OVERDUE
+  - REWORK_ESCALATION_REQUIRED

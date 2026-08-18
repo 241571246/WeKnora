@@ -8,7 +8,7 @@
         <div class="header-title" style="--wails-draggable: drag">
           <div class="title-row" style="--wails-draggable: drag">
             <h2 style="--wails-draggable: drag">{{ $t('knowledgeBase.title') }}</h2>
-            <t-tooltip v-if="authStore.hasRole('contributor')" :content="$t('knowledgeList.create')" placement="bottom">
+            <t-tooltip v-if="authStore.hasRole('viewer')" :content="$t('knowledgeList.create')" placement="bottom">
               <t-button variant="text" theme="default" size="small" class="header-action-btn"
                 data-guide="kb-list-create" style="--wails-draggable: no-drag" @click="handleCreateKnowledgeBase">
                 <template #icon><t-icon name="folder-add" size="16px" /></template>
@@ -19,6 +19,7 @@
         </div>
       </div>
       <div class="kb-list-main">
+        <KBCollectionTreePanel :knowledge-bases="kbs" @filter="collectionFilterIds = $event" />
         <!-- creator filter intentionally removed from chrome: every card
              already shows its creator via ResourceOriginBadge / avatar, so
              a dedicated horizontal switch added more noise than signal.
@@ -224,12 +225,12 @@
                         <t-icon class="menu-icon" name="file-copy" />
                         <span>{{ $t('knowledgeList.menu.duplicate') }}</span>
                       </div>
-                      <template v-if="canManageKBCard(kb)">
-                        <div class="popup-menu-item" @click.stop="handleSettingsById(kb.id)">
+                      <template v-if="canManageKBCard(kb) || canDeleteKBCard(kb)">
+                        <div v-if="canManageKBCard(kb)" class="popup-menu-item" @click.stop="handleSettingsById(kb.id)">
                           <t-icon class="menu-icon" name="setting" />
                           <span>{{ $t('knowledgeBase.settings') }}</span>
                         </div>
-                        <div class="popup-menu-item delete" @click.stop="handleDeleteById(kb.id)">
+                        <div v-if="canDeleteKBCard(kb)" class="popup-menu-item delete" @click.stop="handleDeleteById(kb.id)">
                           <t-icon class="menu-icon" name="delete" />
                           <span>{{ $t('common.delete') }}</span>
                         </div>
@@ -457,12 +458,12 @@
                         <t-icon class="menu-icon" name="file-copy" />
                         <span>{{ $t('knowledgeList.menu.duplicate') }}</span>
                       </div>
-                      <template v-if="canManageKBCard(kb)">
-                        <div class="popup-menu-item" @click.stop="handleSettings(kb)">
+                      <template v-if="canManageKBCard(kb) || canDeleteKBCard(kb)">
+                        <div v-if="canManageKBCard(kb)" class="popup-menu-item" @click.stop="handleSettings(kb)">
                           <t-icon class="menu-icon" name="setting" />
                           <span>{{ $t('knowledgeBase.settings') }}</span>
                         </div>
-                        <div class="popup-menu-item delete" @click.stop="handleDelete(kb)">
+                        <div v-if="canDeleteKBCard(kb)" class="popup-menu-item delete" @click.stop="handleDelete(kb)">
                           <t-icon class="menu-icon" name="delete" />
                           <span>{{ $t('common.delete') }}</span>
                         </div>
@@ -635,7 +636,7 @@
           <img class="empty-img" src="@/assets/img/upload.svg" alt="">
           <span class="empty-txt">{{ $t('knowledgeList.empty.title') }}</span>
           <span class="empty-desc">{{ $t('knowledgeList.empty.description') }}</span>
-          <t-button v-if="authStore.hasRole('contributor')" class="kb-create-btn empty-state-btn"
+          <t-button v-if="authStore.hasRole('viewer')" class="kb-create-btn empty-state-btn"
             data-guide="kb-list-create" @click="handleCreateKnowledgeBase">
             <template #icon><t-icon name="folder-add" /></template>
             {{ $t('knowledgeList.create') }}
@@ -663,7 +664,7 @@
           <img class="empty-img" src="@/assets/img/upload.svg" alt="">
           <span class="empty-txt">{{ $t('knowledgeList.empty.title') }}</span>
           <span class="empty-desc">{{ $t('knowledgeList.empty.description') }}</span>
-          <t-button v-if="authStore.hasRole('contributor')" class="kb-create-btn empty-state-btn"
+          <t-button v-if="authStore.hasRole('viewer')" class="kb-create-btn empty-state-btn"
             data-guide="kb-list-create" @click="handleCreateKnowledgeBase">
             <template #icon><t-icon name="folder-add" /></template>
             {{ $t('knowledgeList.create') }}
@@ -798,6 +799,7 @@ import ListSpaceSidebar from '@/components/ListSpaceSidebar.vue'
 import ResourceOriginBadge from '@/components/ResourceOriginBadge.vue'
 import { shouldShowResourceOriginBadge } from '@/utils/card-list-badge'
 import ContextualGuide from '@/components/ContextualGuide.vue'
+import KBCollectionTreePanel from './components/KBCollectionTreePanel.vue'
 import { isContextualGuideDone, markContextualGuideDone } from '@/config/contextualGuides'
 import { useTenantModelReadiness } from '@/composables/useTenantModelReadiness'
 import { useI18n } from 'vue-i18n'
@@ -823,7 +825,7 @@ const { t } = useI18n()
 // stored value (not "workspace") for back-compat with any external link
 // that might point at the old query — its display label is rebranded
 // via ListSpaceSidebar's workspaceLabel computed.
-const defaultScope: 'all' | 'mine' = authStore.hasRole('contributor') ? 'mine' : 'all'
+const defaultScope: 'all' | 'mine' = authStore.hasRole('viewer') ? 'mine' : 'all'
 const { scope: spaceSelection, creator: creatorFilter } = useListUrlState({
   defaultScope,
   defaultCreator: 'all',
@@ -867,6 +869,7 @@ interface KB {
   creator_id?: string;
   // creator_name 由后端 list 接口回填，仅用于卡片右下角来源徽章的 tooltip。
   creator_name?: string;
+  my_capabilities?: string[];
 }
 
 const kbs = ref<KB[]>([])
@@ -1157,7 +1160,8 @@ const spaceKbSectionCounts = computed<Record<KbSectionKey, number>>(() => {
 // pre-filtered, pre-ordered slices, so the existing kb-card / shared
 // kb-card templates render them with zero extra markup. Order is
 // preserved via the upstream array (pins order is ts-desc).
-const filteredKnowledgeBases = computed(() => {
+const collectionFilterIds = ref<string[] | null>(null)
+const unfilteredKnowledgeBases = computed(() => {
   if (spaceSelection.value === 'favorites') {
     return favoritesList.value
   }
@@ -1184,9 +1188,16 @@ const filteredKnowledgeBases = computed(() => {
   ) as unknown as Array<(KB & { isMine: true }) | (SharedKnowledgeBase['knowledge_base'] & { isMine: false; permission: string; shared_at: string; share_id: string } & any)>
 })
 
+const filteredKnowledgeBases = computed(() => {
+  const rows = unfilteredKnowledgeBases.value
+  if (collectionFilterIds.value === null) return rows
+  const allowed = new Set(collectionFilterIds.value)
+  return rows.filter((kb: any) => allowed.has(String(kb.id)))
+})
+
 const showKbListEmpty = computed(() => {
   if (loading.value) return false
-  if (!authStore.hasRole('contributor')) return false
+  if (!authStore.hasRole('viewer')) return false
   if (spaceSelection.value === 'all' && filteredKnowledgeBases.value.length === 0) return true
   if (spaceSelection.value === 'mine' && kbs.value.length === 0) return true
   return false
@@ -1352,13 +1363,24 @@ const handleSettings = (kb: KB) => {
 // those as tenant-owned (Admin+ may manage) so existing KBs aren't
 // suddenly unmanageable for everyone.
 function canManageKBCard(kb: KB): boolean {
+  if (Array.isArray(kb.my_capabilities)) {
+    return kb.my_capabilities.includes('kb.settings.edit') || kb.my_capabilities.includes('kb.members.manage')
+  }
+  const userId = authStore.user?.id || ''
+  if (kb.creator_id && userId && kb.creator_id === userId) return true
+  return authStore.hasRole('admin')
+}
+
+function canDeleteKBCard(kb: KB): boolean {
+  if (Array.isArray(kb.my_capabilities)) return kb.my_capabilities.includes('kb.delete')
   const userId = authStore.user?.id || ''
   if (kb.creator_id && userId && kb.creator_id === userId) return true
   return authStore.hasRole('admin')
 }
 
 function canDuplicateKBCard(kb: any): boolean {
-  return authStore.hasRole('contributor') && kb.isMine !== false
+  if (Array.isArray(kb.my_capabilities)) return kb.my_capabilities.includes('kb.metadata.read')
+  return authStore.hasRole('viewer') && kb.isMine !== false
 }
 
 // isMyKb 仅用于卡片右下角徽章在「我创建」与「同空间其他成员创建」之间切换。

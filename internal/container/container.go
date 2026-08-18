@@ -146,6 +146,8 @@ func BuildContainer(container *dig.Container) *dig.Container {
 	must(container.Provide(repository.NewTenantInvitationRepository))
 	must(container.Provide(repository.NewAuditLogRepository))
 	must(container.Provide(repository.NewKnowledgeBaseRepository))
+	must(container.Provide(repository.NewKBMembershipRepository))
+	must(container.Provide(repository.NewKBCollectionRepository))
 	must(container.Provide(repository.NewKnowledgeRepository))
 	must(container.Provide(repository.NewKnowledgeSpanRepository))
 	must(container.Provide(repository.NewChunkRepository))
@@ -189,6 +191,9 @@ func BuildContainer(container *dig.Container) *dig.Container {
 	must(container.Provide(service.NewAuditLogService))
 	must(container.Provide(service.NewAuditLogRetentionRunner))
 	must(container.Provide(service.NewKnowledgeBaseService))
+	must(container.Provide(service.NewKBMembershipService))
+	must(container.Provide(service.NewKBAuthorizer))
+	must(container.Provide(service.NewKBCollectionService))
 	must(container.Provide(service.NewOrganizationService))
 	must(container.Provide(service.NewKBShareService)) // KBShareService must be registered before KnowledgeService and KnowledgeTagService
 	must(container.Provide(service.NewAgentShareService))
@@ -343,6 +348,8 @@ func BuildContainer(container *dig.Container) *dig.Container {
 	must(container.Provide(handler.NewTenantInvitationHandler))
 	must(container.Provide(handler.NewAuditLogHandler))
 	must(container.Provide(handler.NewKnowledgeBaseHandler))
+	must(container.Provide(handler.NewKBACLHandler))
+	must(container.Provide(handler.NewKBCollectionHandler))
 	must(container.Provide(handler.NewKnowledgeHandler))
 	must(container.Provide(handler.NewChunkHandler))
 	must(container.Provide(handler.NewFAQHandler))
@@ -689,6 +696,10 @@ func initDatabase(cfg *config.Config) (*gorm.DB, error) {
 				context.Background(),
 				"Continuing with application startup. Please run migrations manually if needed.",
 			)
+		}
+		if err := database.RunVONEMigrationsWithOptions(migrateDSN, migrationOpts); err != nil {
+			logger.Warnf(context.Background(), "VONE extension migration failed: %v", err)
+			logger.Warnf(context.Background(), "Knowledge-base ACL enforcement will fail closed until VONE migrations succeed.")
 		}
 
 		// Post-migration: resolve __pending_env__ storage provider markers for historical KBs.

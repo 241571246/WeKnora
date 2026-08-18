@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "projectId": "PRJ-WEKNORA-VONE",
+  "capturedAt": "2026-08-17T20:49:20+08:00",
+  "counts": {
+    "requirements": 1,
+    "bugs": 0,
+    "openActions": 3
+  },
+  "entities": {
+    "REQ-2026-001": {
+      "recordedStatus": "In Progress",
+      "expectedStatus": "In Progress",
+      "currentGate": "QA Ready",
+      "closureGaps": [
+        "TECHNICAL_VERIFICATION_MISSING",
+        "QA_HANDOFF_MISSING"
+      ],
+      "health": "AT_RISK",
+      "healthReasons": [
+        "Unmitigated High/Critical risk"
+      ],
+      "reworkCount": 0,
+      "firstPass": "Not Recorded",
+      "primaryReworkCause": "Not Recorded",
+      "reworkEscalated": false,
+      "reworkAiHours": 0,
+      "reworkHumanHours": 0
+    }
+  }
+}

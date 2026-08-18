@@ -1,8 +1,75 @@
-import { get, post, put, del, postUpload, getDown } from "../../utils/request";
+import { get, post, put, patch, del, postUpload, getDown } from "../../utils/request";
 import type { KnowledgeProcessOverrides } from '@/types/knowledgeProcess';
 import type { AuditLog, AuditOutcome, ListAuditLogResponse } from '@/api/tenant/audit-log';
 
 export type KnowledgeBaseActivity = AuditLog;
+
+export type KBCapability =
+  | 'kb.ai.query' | 'kb.metadata.read' | 'kb.documents.list'
+  | 'kb.document.preview' | 'kb.chunk.preview' | 'kb.document.download'
+  | 'kb.document.upload' | 'kb.document.edit' | 'kb.document.delete'
+  | 'kb.document.reparse' | 'kb.chunk.edit' | 'kb.chunk.delete'
+  | 'kb.folder.manage' | 'kb.settings.edit' | 'kb.delete'
+  | 'kb.members.manage' | 'kb.owners.manage';
+
+export type KBMemberRole = 'owner' | 'editor' | 'document_viewer' | 'ai_user' | 'custom';
+
+export interface KBAccessDecision {
+  allowed: boolean;
+  capability: KBCapability;
+  source: 'workspace_owner' | 'membership' | 'organization_share' | 'agent_share' | 'api_key' | 'none';
+  role?: KBMemberRole;
+  capabilities: KBCapability[];
+  reason?: string;
+}
+
+export interface KBMembership {
+  id: number;
+  tenant_id: number;
+  kb_id: string;
+  user_id: string;
+  role: KBMemberRole;
+  capabilities?: Array<{ membership_id: number; capability: KBCapability }>;
+}
+
+export interface KBCollection {
+  id: string;
+  tenant_id: number;
+  parent_id?: string;
+  name: string;
+  sort_order: number;
+}
+
+export interface KBCollectionBinding {
+  kb_id: string;
+  tenant_id: number;
+  collection_id: string;
+}
+
+export function getKBAccess(id: string, capability: KBCapability = 'kb.metadata.read') {
+  return get(`/api/v1/knowledge-bases/${id}/access?capability=${encodeURIComponent(capability)}`);
+}
+
+export function listKBMembers(id: string) { return get(`/api/v1/knowledge-bases/${id}/members`); }
+export function addKBMember(id: string, data: { user_id: string; role: KBMemberRole; capabilities?: KBCapability[] }) {
+  return post(`/api/v1/knowledge-bases/${id}/members`, data);
+}
+export function updateKBMember(id: string, userId: string, data: { role: KBMemberRole; capabilities?: KBCapability[] }) {
+  return patch(`/api/v1/knowledge-bases/${id}/members/${userId}`, data);
+}
+export function deleteKBMember(id: string, userId: string) { return del(`/api/v1/knowledge-bases/${id}/members/${userId}`); }
+
+export function getKBCollectionTree() { return get('/api/v1/knowledge-base-collections/tree'); }
+export function createKBCollection(data: { parent_id?: string; name: string; sort_order?: number }) {
+  return post('/api/v1/knowledge-base-collections', data);
+}
+export function updateKBCollection(id: string, data: { parent_id?: string; name: string; sort_order?: number }) {
+  return patch(`/api/v1/knowledge-base-collections/${id}`, data);
+}
+export function deleteKBCollection(id: string) { return del(`/api/v1/knowledge-base-collections/${id}`); }
+export function setKBCollection(id: string, collectionId: string) {
+  return put(`/api/v1/knowledge-bases/${id}/collection`, { collection_id: collectionId });
+}
 
 export interface ListKnowledgeBaseActivityParams {
   after_id?: number;
@@ -401,6 +468,10 @@ export interface ChunkEditPayload {
 
 export function updateDocumentChunk(knowledgeId: string, chunkId: string, data: ChunkEditPayload) {
   return put(`/api/v1/chunks/${knowledgeId}/${chunkId}`, data);
+}
+
+export function deleteDocumentChunk(knowledgeId: string, chunkId: string) {
+  return del(`/api/v1/chunks/${knowledgeId}/${chunkId}`);
 }
 
 export function listChunkRevisions(knowledgeId: string, chunkId: string) {

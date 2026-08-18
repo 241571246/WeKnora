@@ -18,6 +18,7 @@ import (
 	"github.com/Tencent/WeKnora/internal/logger"
 	"github.com/Tencent/WeKnora/internal/storageurl"
 	"github.com/Tencent/WeKnora/internal/types"
+	"github.com/Tencent/WeKnora/internal/types/interfaces"
 	secutils "github.com/Tencent/WeKnora/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -162,6 +163,82 @@ func (h *Handler) parseQARequest(c *gin.Context, logPrefix string) (*qaRequestCo
 	kbIDs, knowledgeIDs := mergeKnowledgeTargets(request.KnowledgeBaseIDs, request.KnowledgeIds, request.MentionedItems)
 	if err := types.AuthorizeTenantAPIKeyKnowledgeTargets(ctx, kbIDs, knowledgeIDs); err != nil {
 		return nil, nil, err
+	}
+	if len(kbIDs) > 0 {
+		if h.kbAuthorizer == nil {
+			types.RecordKBACLError()
+			return nil, nil, errors.NewServiceUnavailableError("knowledge-base authorizer unavailable")
+		}
+		callerTenantID := c.GetUint64(types.TenantIDContextKey.String())
+		callerID, _ := types.UserIDFromContext(ctx)
+		for _, kbID := range kbIDs {
+			decision, authErr := h.kbAuthorizer.Authorize(ctx, interfaces.KBPolicyRequest{
+				TenantID: callerTenantID, KBID: kbID, UserID: callerID,
+				TenantRole: types.TenantRoleFromContext(ctx), Capability: types.KBCapabilityAIQuery,
+				AgentID: request.AgentID,
+			})
+			if authErr != nil {
+				types.RecordKBACLError()
+				return nil, nil, errors.NewServiceUnavailableError("cannot verify knowledge-base query access")
+			}
+			if !decision.Allowed && types.CurrentKBACLMode() == types.KBACLModeEnforce {
+				types.RecordKBACLDenied()
+				return nil, nil, errors.NewForbiddenError("knowledge-base AI query capability denied")
+			}
+			if !decision.Allowed {
+				types.RecordKBACLShadowDenied()
+				logger.Infof(ctx, "[kb_acl_metric] shadow_ai_denied=1 kb=%s user=%s", kbID, callerID)
+			} else {
+				types.RecordKBACLAllowed()
+			}
+		}
+	}
+	// A caller may scope a question to documents without sending the parent KB
+	// IDs. Resolve every document first so this form cannot bypass kb.ai.query.
+	if len(knowledgeIDs) > 0 {
+		if h.kbAuthorizer == nil || h.knowledgeService == nil {
+			types.RecordKBACLError()
+			return nil, nil, errors.NewServiceUnavailableError("knowledge-base authorizer unavailable")
+		}
+		callerTenantID := c.GetUint64(types.TenantIDContextKey.String())
+		callerID, _ := types.UserIDFromContext(ctx)
+		seenKBs := make(map[string]struct{}, len(knowledgeIDs))
+		for _, knowledgeID := range knowledgeIDs {
+			knowledge, resolveErr := h.knowledgeService.GetKnowledgeByIDOnly(ctx, knowledgeID)
+			if resolveErr != nil || knowledge == nil {
+				return nil, nil, errors.NewNotFoundError("Knowledge not found")
+			}
+			if _, seen := seenKBs[knowledge.KnowledgeBaseID]; seen {
+				continue
+			}
+			seenKBs[knowledge.KnowledgeBaseID] = struct{}{}
+			decision, authErr := h.kbAuthorizer.Authorize(ctx, interfaces.KBPolicyRequest{
+				TenantID: callerTenantID, KBID: knowledge.KnowledgeBaseID, UserID: callerID,
+				TenantRole: types.TenantRoleFromContext(ctx), Capability: types.KBCapabilityAIQuery,
+				AgentID: request.AgentID,
+			})
+			if authErr != nil {
+				types.RecordKBACLError()
+				return nil, nil, errors.NewServiceUnavailableError("cannot verify knowledge-base query access")
+			}
+			if !decision.Allowed && types.CurrentKBACLMode() == types.KBACLModeEnforce {
+				types.RecordKBACLDenied()
+				return nil, nil, errors.NewForbiddenError("knowledge-base AI query capability denied")
+			}
+			if !decision.Allowed {
+				types.RecordKBACLShadowDenied()
+				logger.Infof(ctx, "[kb_acl_metric] shadow_ai_document_denied=1 kb=%s user=%s", knowledge.KnowledgeBaseID, callerID)
+			} else {
+				types.RecordKBACLAllowed()
+			}
+		}
+	}
+	if customAgent != nil && customAgent.Config.KBSelectionMode != "none" {
+		filteredAgent, filterErr := h.filterAgentKnowledgeBasesByAIQuery(ctx, c, customAgent, request.AgentID)
+		if filterErr != nil {
+			return nil, nil, filterErr
+		}
+		customAgent = filteredAgent
 	}
 
 	// The built-in wiki fixer is invoked from a KB page, not from a tenant's
@@ -377,6 +454,89 @@ func (h *Handler) parseQARequest(c *gin.Context, logPrefix string) (*qaRequestCo
 	}
 
 	return reqCtx, &request, nil
+}
+
+// filterAgentKnowledgeBasesByAIQuery turns both "selected" and "all" into
+// an explicit, caller-authorized KB set before the request enters the session
+// service. This is the enforcement point for:
+//
+//	Agent configured KBs (or all source-workspace KBs) ∩ caller kb.ai.query.
+//
+// In particular, leaving mode=all unresolved would let the downstream service
+// enumerate a different set under an effective shared-agent tenant context.
+func (h *Handler) filterAgentKnowledgeBasesByAIQuery(
+	ctx context.Context,
+	c *gin.Context,
+	agent *types.CustomAgent,
+	agentID string,
+) (*types.CustomAgent, error) {
+	if agent == nil || agent.Config.KBSelectionMode == "none" {
+		return agent, nil
+	}
+	if h.kbAuthorizer == nil {
+		types.RecordKBACLError()
+		return nil, errors.NewServiceUnavailableError("knowledge-base authorizer unavailable")
+	}
+	candidates := append([]string(nil), agent.Config.KnowledgeBases...)
+	if agent.Config.KBSelectionMode == "all" {
+		if h.knowledgebaseService == nil {
+			types.RecordKBACLError()
+			return nil, errors.NewServiceUnavailableError("knowledge-base service unavailable")
+		}
+		rows, err := h.knowledgebaseService.ListKnowledgeBasesByTenantID(ctx, agent.TenantID)
+		if err != nil {
+			types.RecordKBACLError()
+			return nil, errors.NewServiceUnavailableError("cannot enumerate agent knowledge bases")
+		}
+		candidates = make([]string, 0, len(rows))
+		for _, kb := range rows {
+			if kb != nil {
+				candidates = append(candidates, kb.ID)
+			}
+		}
+	}
+
+	callerTenantID := c.GetUint64(types.TenantIDContextKey.String())
+	callerID, _ := types.UserIDFromContext(ctx)
+	filtered := make([]string, 0, len(candidates))
+	seen := make(map[string]struct{}, len(candidates))
+	for _, kbID := range candidates {
+		if _, exists := seen[kbID]; exists {
+			continue
+		}
+		seen[kbID] = struct{}{}
+		decision, authErr := h.kbAuthorizer.Authorize(ctx, interfaces.KBPolicyRequest{
+			TenantID: callerTenantID, KBID: kbID, UserID: callerID,
+			TenantRole: types.TenantRoleFromContext(ctx), Capability: types.KBCapabilityAIQuery,
+			AgentID: agentID,
+		})
+		if authErr != nil {
+			types.RecordKBACLError()
+			return nil, errors.NewServiceUnavailableError("cannot verify agent knowledge-base access")
+		}
+		if decision.Allowed {
+			types.RecordKBACLAllowed()
+			filtered = append(filtered, kbID)
+			continue
+		}
+		if types.CurrentKBACLMode() == types.KBACLModeEnforce {
+			types.RecordKBACLDenied()
+			continue
+		}
+		types.RecordKBACLShadowDenied()
+		filtered = append(filtered, kbID)
+	}
+
+	agentCopy := *agent
+	agentCopy.Config = agent.Config
+	agentCopy.Config.KnowledgeBases = filtered
+	// "all" has now been materialized into a bounded explicit set. Keeping
+	// mode=all would cause the session service to enumerate again and discard
+	// the authorization intersection we just computed.
+	if agentCopy.Config.KBSelectionMode == "all" {
+		agentCopy.Config.KBSelectionMode = "selected"
+	}
+	return &agentCopy, nil
 }
 
 func buildMessageExecutionContext(

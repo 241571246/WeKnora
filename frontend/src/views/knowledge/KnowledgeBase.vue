@@ -39,6 +39,8 @@ import {
   moveKnowledgeToFolder,
   renameKnowledgeFolder,
   type KnowledgeFolderTree,
+  getKBAccess,
+  type KBCapability,
 } from "@/api/knowledge-base/index";
 import { knowledgeSpansPayloadHasTrace } from '@/utils/knowledgeTrace';
 import FAQEntryManager from './components/FAQEntryManager.vue';
@@ -73,10 +75,17 @@ import {
 import { useI18n } from 'vue-i18n';
 import { useMarqueeSelect } from '@/hooks/useMarqueeSelect';
 import type { ParserEngineInfo } from '@/api/system';
+import { projectKBActionPermissions } from './kbAclPresentation';
 const route = useRoute();
 const { t } = useI18n();
 const kbId = computed(() => (route.params as any).kbId as string || '');
 const kbInfo = ref<any>(null);
+const kbCapabilities = ref<KBCapability[]>([]);
+const kbAccessLoaded = ref(false);
+const hasKBCapability = (capability: KBCapability) => kbCapabilities.value.includes(capability);
+const kbActions = computed(() => projectKBActionPermissions(kbCapabilities.value));
+const canListDocuments = computed(() => kbActions.value.canListDocuments);
+const isAIOnlyAccess = computed(() => kbActions.value.aiOnly);
 const uploadSourceRef = ref<InstanceType<typeof KbUploadSourceDropdown> | null>(null);
 const uploading = ref(false);
 const kbLoading = ref(false);
@@ -103,6 +112,7 @@ const wikiIndexingTip = computed(() => {
 const onWikiStatusChange = (payload: { pendingTasks: number; isActive: boolean; pendingIssues: number }) => {
   wikiStatus.value = payload
 }
+const openAIQuery = () => router.push(`/platform/knowledge-bases/${kbId.value}/creatChat`)
 const onViewWikiInGraph = async (slug: string) => {
   // Write tab+slug first so the activeKbTab watcher's later replace
   // (which spreads route.query) preserves slug instead of clobbering it.
@@ -282,16 +292,25 @@ const isViaShare = computed(() => !!currentSharedKb.value);
 // hasRole('contributor') is intentionally NOT here — being a Contributor
 // in a tenant does not by itself grant edit on someone else's KB.
 const canEdit = computed(() => {
+  if (kbAccessLoaded.value) return kbActions.value.canEditDocument || kbActions.value.canUploadDocument || kbActions.value.canEditChunks;
   if (isViaShare.value) return orgStore.canEditKB(kbId.value, false);
   if (isOwner.value) return true;
   if (authStore.hasRole('admin')) return true;
   return orgStore.canEditKB(kbId.value, false);
 });
+const canUploadDocument = computed(() => kbAccessLoaded.value ? kbActions.value.canUploadDocument : canEdit.value);
+const canEditDocument = computed(() => kbAccessLoaded.value ? kbActions.value.canEditDocument : canEdit.value);
+const canReparseDocument = computed(() => kbAccessLoaded.value ? kbActions.value.canReparseDocument : canEdit.value);
+const canDeleteDocument = computed(() => kbAccessLoaded.value ? kbActions.value.canDeleteDocument : canEdit.value);
+const canEditChunks = computed(() => kbAccessLoaded.value ? kbActions.value.canEditChunks : canEdit.value);
+const canDeleteChunks = computed(() => kbAccessLoaded.value ? kbActions.value.canDeleteChunks : canEdit.value);
+const canManageFolders = computed(() => kbAccessLoaded.value ? kbActions.value.canManageFolders : canEdit.value);
 
 // Can manage (delete, settings, etc.): same isViaShare-first rule. For
 // shared KBs only an 'admin' share grant qualifies — editor/viewer (and
 // even being the creator viewed via share) never grant delete/settings.
 const canManage = computed(() => {
+  if (kbAccessLoaded.value) return hasKBCapability('kb.settings.edit') || hasKBCapability('kb.members.manage');
   if (isViaShare.value) return orgStore.canManageKB(kbId.value, false);
   if (isOwner.value) return true;
   if (authStore.hasRole('admin')) return true;
@@ -309,6 +328,9 @@ const canManage = computed(() => {
 // the local tenant role is irrelevant — canEdit already encodes the share
 // grant, so trust it.
 const canMutateKnowledge = computed(() => {
+	if (kbAccessLoaded.value) {
+		return canDeleteDocument.value || canReparseDocument.value || canManageFolders.value;
+	}
   if (!canEdit.value) return false;
   if (isViaShare.value) return true;
   if (isOwner.value) return true;
@@ -324,6 +346,7 @@ const effectiveKBPermission = computed(() => orgStore.getKBPermission(kbId.value
 // Viewer can never download; for cross-tenant KBs the effective share
 // permission must additionally be Editor or Admin.
 const canDownloadKnowledge = computed(() => {
+  if (kbAccessLoaded.value) return kbActions.value.canDownloadDocument;
   if (!authStore.hasRole('contributor')) return false;
   const permission = effectiveKBPermission.value;
   return !permission || permission === 'owner' || permission === 'admin' || permission === 'editor';
@@ -1017,16 +1040,22 @@ const loadKnowledgeBaseInfo = async (targetKbId: string, force = false) => {
   }
   kbLoading.value = true;
   try {
-    const data = await chatResources.fetchKnowledgeBaseById(targetKbId, force);
+    kbAccessLoaded.value = false;
+    const [data, accessResult] = await Promise.all([
+      chatResources.fetchKnowledgeBaseById(targetKbId, force),
+      getKBAccess(targetKbId) as any,
+    ]);
     if (!isCurrentKb(targetKbId)) return;
 
     kbInfo.value = data;
+    kbCapabilities.value = (accessResult?.data?.capabilities || []) as KBCapability[];
+    kbAccessLoaded.value = true;
     selectedTagIds.value = [];
     tagFilterCleared.value = false;
     uiStore.clearSelectedTagIds();
     // 重置store中的标签选择状态，避免上传文档时自动带上之前选择的标签
     uiStore.clearSelectedTagIds();
-    if (!isFAQ.value) {
+    if (!isFAQ.value && canListDocuments.value) {
       loadKnowledgeFiles(targetKbId);
       void loadFolderTree(targetKbId);
     } else {
@@ -1034,12 +1063,14 @@ const loadKnowledgeBaseInfo = async (targetKbId: string, force = false) => {
       total.value = 0;
       folderTree.value = null;
     }
-    loadTags(targetKbId, true);
+    if (canListDocuments.value) loadTags(targetKbId, true);
   } catch (error) {
     if (!isCurrentKb(targetKbId)) return;
 
     console.error('Failed to load knowledge base info:', error);
     kbInfo.value = null;
+    kbCapabilities.value = [];
+    kbAccessLoaded.value = false;
     cardList.value = [];
     total.value = 0;
   } finally {
@@ -1400,14 +1431,22 @@ const closeDoc = () => {
   isCardDetails.value = false;
 };
 const openCardDetails = (item: KnowledgeCard) => {
+  if (kbAccessLoaded.value && !kbActions.value.canPreviewDocument && !kbActions.value.canPreviewChunks) {
+    MessagePlugin.warning(t('kbAcl.permissionRevoked'));
+    return;
+  }
   isCardDetails.value = true;
-  getCardDetails(item);
+  getCardDetails(item, kbActions.value.canPreviewChunks);
 };
 
 // Open source document preview from WikiBrowser
 const openSourceDoc = (knowledgeId: string) => {
+  if (kbAccessLoaded.value && !kbActions.value.canPreviewDocument && !kbActions.value.canPreviewChunks) {
+    MessagePlugin.warning(t('kbAcl.permissionRevoked'));
+    return;
+  }
   isCardDetails.value = true;
-  getCardDetails({ id: knowledgeId });
+  getCardDetails({ id: knowledgeId }, kbActions.value.canPreviewChunks);
 };
 
 const closeCardMoreMenu = (index: number) => {
@@ -1866,7 +1905,7 @@ const handleViewTrace = (index: number, item: KnowledgeCard) => {
     cardList.value[index].isMore = false;
   }
   moreIndex.value = -1;
-  getCardDetails(item);
+  getCardDetails(item, !kbAccessLoaded.value || kbActions.value.canPreviewChunks);
   details.id = item.id;
   details.parse_status = item.parse_status;
   nextTick(() => {
@@ -2062,7 +2101,7 @@ const isManualDraftKnowledge = (item: KnowledgeCard) =>
 
 const openKnowledgeItem = (item: KnowledgeCard) => {
   if (shouldSuppressDocClick()) return;
-  if (canEdit.value && isManualDraftKnowledge(item)) {
+  if (canEditDocument.value && isManualDraftKnowledge(item)) {
     const index = cardList.value.findIndex((c) => c.id === item.id);
     if (index >= 0) {
       handleManualEdit(index, item);
@@ -2329,17 +2368,24 @@ async function createNewSession(value: string): Promise<void> {
         </div>
       </div>
 
+      <div v-if="kbAccessLoaded && isAIOnlyAccess" class="ai-only-access">
+        <t-icon name="chat-bubble-help" size="40px" />
+        <h3>{{ $t('kbAcl.aiOnly.title') }}</h3>
+        <p>{{ $t('kbAcl.aiOnly.description') }}</p>
+        <t-button theme="primary" @click="openAIQuery">{{ $t('kbAcl.aiOnly.action') }}</t-button>
+      </div>
+
       <!-- Wiki Browser / Graph (shown when wiki or graph tab is active) -->
-      <div v-if="isWiki && (activeKbTab === 'wiki' || activeKbTab === 'graph')" class="wiki-main-area">
+      <div v-if="canListDocuments && isWiki && (activeKbTab === 'wiki' || activeKbTab === 'graph')" class="wiki-main-area">
         <WikiBrowser v-if="kbId" :knowledge-base-id="kbId" :view="activeKbTab === 'graph' ? 'graph' : 'browser'"
-          :can-edit="canEdit" @open-source-doc="openSourceDoc" @status-change="onWikiStatusChange"
+          :can-edit="canEditDocument" @open-source-doc="openSourceDoc" @status-change="onWikiStatusChange"
           @view-graph="onViewWikiInGraph" />
       </div>
 
-      <template v-if="activeKbTab === 'documents' || !isWiki">
+      <template v-if="canListDocuments && (activeKbTab === 'documents' || !isWiki)">
         <div class="knowledge-main">
           <KbFolderTree v-if="showFolderTree && !folderTreeCollapsed" :tree="folderTree" :selected-path="selectedFolderPath"
-            :loading="folderTreeLoading" :can-edit="canEdit"
+            :loading="folderTreeLoading" :can-edit="canManageFolders"
             @select="handleFolderSelect" @update:collapsed="handleFolderTreeCollapsedChange"
             @rename="handleFolderRename" />
           <div class="tag-content">
@@ -2528,7 +2574,7 @@ async function createNewSession(value: string): Promise<void> {
                       </button>
                     </t-tooltip>
                   </div>
-                  <div v-if="canEdit" class="doc-filter-actions">
+                  <div v-if="canUploadDocument" class="doc-filter-actions">
                     <KbUploadSourceDropdown ref="uploadSourceRef" :accept-file-types="acceptFileTypes"
                       :supported-file-types="[...supportedFileTypes]" include-manual trigger-icon="file-add"
                       trigger-class="content-bar-icon-btn" data-guide="kb-detail-add-doc"
@@ -2570,6 +2616,10 @@ async function createNewSession(value: string): Promise<void> {
                     :batch-mode="batchMode"
                     :can-edit="canEdit"
                     :can-mutate-knowledge="canMutateKnowledge"
+                    :can-edit-document="canEditDocument"
+                    :can-reparse-document="canReparseDocument"
+                    :can-delete-document="canDeleteDocument"
+                    :can-manage-folders="canManageFolders"
                     :trace-available-by-id="traceAvailableById"
                     :tag-list="tagList"
                     :move-menu-mode="moveMenuMode"
@@ -2596,6 +2646,10 @@ async function createNewSession(value: string): Promise<void> {
                   <DocumentListView :items="cardList" :folders="currentChildFolders" :folder-options="folderOptions"
                     :selected-ids="selectedIds" :tag-list="tagList"
                     :can-edit="canEdit" :can-mutate-knowledge="canMutateKnowledge"
+                    :can-edit-document="canEditDocument"
+                    :can-reparse-document="canReparseDocument"
+                    :can-delete-document="canDeleteDocument"
+                    :can-manage-folders="canManageFolders"
                     :trace-visible-ids="traceAvailableById"
                     :move-menu-mode="moveMenuMode"
                     :move-target-kbs="moveTargetKbs"
@@ -2641,7 +2695,9 @@ async function createNewSession(value: string): Promise<void> {
       </template>
 
       <!-- DocContent drawer (shared by documents tab and wiki source refs) -->
-      <DocContent ref="docContentRef" :visible="isCardDetails" :details="details" :canEditKB="canEdit"
+      <DocContent ref="docContentRef" :visible="isCardDetails" :details="details" :canEditKB="canEditDocument"
+        :canEditContent="canEditChunks" :canDeleteChunks="canDeleteChunks"
+        :canPreviewDocument="kbActions.canPreviewDocument" :canPreviewChunks="kbActions.canPreviewChunks"
         :canDownloadKB="canDownloadKnowledge" :kbId="kbId"
         @closeDoc="closeDoc" @getDoc="getDoc" @summaryStateChange="syncDocumentSummaryState">
       </DocContent>
@@ -2649,7 +2705,13 @@ async function createNewSession(value: string): Promise<void> {
   </template>
   <template v-else>
     <div class="faq-manager-wrapper">
-      <FAQEntryManager v-if="kbId" :kb-id="kbId" />
+      <div v-if="kbAccessLoaded && isAIOnlyAccess" class="ai-only-access">
+        <t-icon name="chat-bubble-help" size="40px" />
+        <h3>该知识库仅授权 AI 搜索</h3>
+        <p>你可以查看回答中的来源与引用片段，但不能浏览或导出 FAQ 原始条目。</p>
+        <t-button theme="primary" @click="openAIQuery">开始 AI 搜索</t-button>
+      </div>
+      <FAQEntryManager v-else-if="kbId && canListDocuments" :kb-id="kbId" />
     </div>
   </template>
 
@@ -3578,6 +3640,19 @@ async function createNewSession(value: string): Promise<void> {
 
 .document-upload-input {
   display: none;
+}
+
+.ai-only-access {
+  margin: 48px auto;
+  max-width: 640px;
+  padding: 48px;
+  border: 1px solid var(--td-component-border);
+  border-radius: 12px;
+  background: var(--td-bg-color-container);
+  text-align: center;
+  color: var(--td-text-color-secondary);
+  h3 { margin: 16px 0 8px; color: var(--td-text-color-primary); }
+  p { margin: 0 0 24px; line-height: 1.7; }
 }
 
 .kb-settings-button {

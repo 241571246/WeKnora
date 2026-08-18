@@ -1,0 +1,12 @@
+schemaVersion: 1
+decisions:
+  - id: DEC-2026-001
+    decisionType: Architecture and Migration
+    relatedScope: REQ-2026-001
+    decision: 保留现有 kb_shares 的跨工作空间共享语义；所有访问必须接入统一知识库 Authorizer，不直接转换为员工成员 ACL，也不得继续由旧共享链路绕过新能力权限。
+    approver: ROCKL
+    decidedAt: "2026-08-17T20:34:20+08:00"
+    effectiveAt: "2026-08-17T20:34:20+08:00"
+    evidence: User confirmation in Codex task and canonical implementation plan V1.0
+    supersedes: N/A
+    status: Active

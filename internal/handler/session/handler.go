@@ -22,6 +22,7 @@ type Handler struct {
 	streamManager        interfaces.StreamManager        // Manager for handling streaming responses
 	config               *config.Config                  // Application configuration
 	knowledgebaseService interfaces.KnowledgeBaseService // Service for managing knowledge bases
+	knowledgeService     interfaces.KnowledgeService     // Resolves document targets to their parent KB
 	customAgentService   interfaces.CustomAgentService   // Service for managing custom agents
 	tenantService        interfaces.TenantService        // Service for loading tenant (shared agent context)
 	agentShareService    interfaces.AgentShareService    // Service for resolving shared agents (KB scope in retrieval)
@@ -31,6 +32,7 @@ type Handler struct {
 	modelService         interfaces.ModelService // Service for model management (VLM access)
 	attachmentProcessor  *AttachmentProcessor    // Processor for file attachments
 	temporaryDocuments   interfaces.TemporaryDocumentService
+	kbAuthorizer         interfaces.KBAuthorizer
 }
 
 // NewHandler creates a new instance of Handler with all necessary dependencies
@@ -41,6 +43,7 @@ func NewHandler(
 	streamManager interfaces.StreamManager,
 	config *config.Config,
 	knowledgebaseService interfaces.KnowledgeBaseService,
+	knowledgeService interfaces.KnowledgeService,
 	customAgentService interfaces.CustomAgentService,
 	tenantService interfaces.TenantService,
 	agentShareService interfaces.AgentShareService,
@@ -51,6 +54,7 @@ func NewHandler(
 	documentReader interfaces.DocumentReader,
 	imageResolver *docparser.ImageResolver,
 	temporaryDocuments interfaces.TemporaryDocumentService,
+	kbAuthorizer interfaces.KBAuthorizer,
 ) *Handler {
 	return &Handler{
 		sessionService:       sessionService,
@@ -59,6 +63,7 @@ func NewHandler(
 		streamManager:        streamManager,
 		config:               config,
 		knowledgebaseService: knowledgebaseService,
+		knowledgeService:     knowledgeService,
 		customAgentService:   customAgentService,
 		tenantService:        tenantService,
 		agentShareService:    agentShareService,
@@ -67,6 +72,7 @@ func NewHandler(
 		storageResolver:      storageResolver,
 		modelService:         modelService,
 		temporaryDocuments:   temporaryDocuments,
+		kbAuthorizer:         kbAuthorizer,
 		attachmentProcessor: NewAttachmentProcessor(
 			fileService,
 			documentReader,

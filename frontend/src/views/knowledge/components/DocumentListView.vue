@@ -34,6 +34,10 @@ const props = defineProps<{
   selectedIds: Set<string>;
   canEdit: boolean;
   canMutateKnowledge: boolean;
+  canEditDocument?: boolean;
+  canReparseDocument?: boolean;
+  canDeleteDocument?: boolean;
+  canManageFolders?: boolean;
   traceVisibleIds: Record<string, boolean>;
   tagList: Tag[];
   loading?: boolean;
@@ -399,6 +403,10 @@ const handleAction = (action: 'edit' | 'reparse' | 'cancel-parse' | 'move' | 'mo
                 <DocumentActionMenu
                   :item="item"
                   :can-mutate-knowledge="canMutateKnowledge"
+                  :can-edit-document="canEditDocument"
+                  :can-reparse-document="canReparseDocument"
+                  :can-delete-document="canDeleteDocument"
+                  :can-manage-folders="canManageFolders"
                   :trace-visible="!!traceVisibleIds[item.id] || (item.parse_status === 'pending' || item.parse_status === 'processing' || item.parse_status === 'finalizing')"
                   @edit="handleAction('edit', item)"
                   @view-trace="handleAction('view-trace', item)"

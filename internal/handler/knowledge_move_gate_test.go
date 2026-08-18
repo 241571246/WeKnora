@@ -43,6 +43,16 @@ type stubMoveKGService struct {
 	interfaces.KnowledgeService
 }
 
+type allowMoveKBAuthorizer struct{}
+
+func (allowMoveKBAuthorizer) Authorize(_ context.Context, req interfaces.KBPolicyRequest) (types.KBPolicyDecision, error) {
+	return types.KBPolicyDecision{Allowed: true, Capability: req.Capability, Source: types.KBPolicySourceMembership}, nil
+}
+
+func (allowMoveKBAuthorizer) ListAccessibleKBIDs(context.Context, uint64, string, types.TenantRole) ([]string, error) {
+	return nil, nil
+}
+
 func (s *stubMoveKGService) GetKnowledgeByID(_ context.Context, _ string) (*types.Knowledge, error) {
 	return nil, errors.New("knowledge not found")
 }
@@ -54,12 +64,15 @@ func newMoveGateRouter(kb interfaces.KnowledgeBaseService, kg interfaces.Knowled
 	r.Use(func(c *gin.Context) {
 		c.Set(types.TenantIDContextKey.String(), uint64(1))
 		c.Set(types.UserIDContextKey.String(), "u-test")
+		ctx := context.WithValue(c.Request.Context(), types.TenantIDContextKey, uint64(1))
+		ctx = context.WithValue(ctx, types.UserIDContextKey, "u-test")
+		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	})
 	// asynqClient stays nil: every case here either rejects at the gate or
 	// fails at knowledge-ID validation, so enqueue is never reached. A nil
 	// deref would mean the gate let a request through to enqueue unexpectedly.
-	h := &KnowledgeHandler{kbService: kb, kgService: kg}
+	h := &KnowledgeHandler{kbService: kb, kgService: kg, kbAuthorizer: allowMoveKBAuthorizer{}}
 	r.POST("/move", h.MoveKnowledge)
 	return r
 }

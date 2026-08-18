@@ -43,6 +43,10 @@ const props = defineProps<{
   batchMode: boolean;
   canEdit: boolean;
   canMutateKnowledge: boolean;
+  canEditDocument?: boolean;
+  canReparseDocument?: boolean;
+  canDeleteDocument?: boolean;
+  canManageFolders?: boolean;
   traceAvailableById: Record<string, boolean>;
   tagList: Tag[];
   /** Sub-folders of the folder currently being browsed. */
@@ -369,6 +373,10 @@ const handleAction = (action: 'edit' | 'view-trace' | 'reparse' | 'cancel-parse'
                 <DocumentActionMenu
                   :item="item"
                   :can-mutate-knowledge="canMutateKnowledge"
+                  :can-edit-document="canEditDocument"
+                  :can-reparse-document="canReparseDocument"
+                  :can-delete-document="canDeleteDocument"
+                  :can-manage-folders="canManageFolders"
                   :trace-visible="isTraceMenuVisible(item)"
                   @edit="handleAction('edit', item)"
                   @view-trace="handleAction('view-trace', item)"

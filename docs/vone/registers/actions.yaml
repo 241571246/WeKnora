@@ -1,0 +1,67 @@
+schemaVersion: 1
+actions:
+  - id: ACT-2026-001
+    relatedId: REQ-2026-001
+    triggerSource: Plan Gate
+    nextAction: 指定另一名独立 QA 复核人，或由另一名具名人类批准范围化 QA 独立性例外。
+    owner: ROCKL
+    createdAt: "2026-08-17T18:10:00+08:00"
+    dueDate: "2026-08-20T18:00:00+08:00"
+    status: Open
+    completionEvidence: N/A
+    escalationOwner: ROCKL
+    escalateAt: "2026-08-21T18:00:00+08:00"
+    escalationStatus: Pending
+    escalationReason: ROCKL 与 RockL 是同一身份，当前 QA 不能被认定为独立 QA；High 风险发布不允许使用单人策略路径。
+  - id: ACT-2026-002
+    relatedId: REQ-2026-001
+    triggerSource: Plan Gate
+    nextAction: 确认 VONE-0.7.2.1 的真实测试身份、部署窗口和预估日期；目标版本已确认为 VONE-0.7.2.1。
+    owner: ROCKL
+    createdAt: "2026-08-17T18:10:00+08:00"
+    dueDate: "2026-08-20T18:00:00+08:00"
+    status: Open
+    completionEvidence: N/A
+    escalationOwner: ROCKL
+    escalateAt: "2026-08-21T18:00:00+08:00"
+    escalationStatus: Pending
+    escalationReason: 目标版本和容量未确认，计划不能转为交付承诺。
+  - id: ACT-2026-003
+    relatedId: REQ-2026-001
+    triggerSource: Migration Decision
+    nextAction: 已确认保留跨工作空间共享语义，并强制通过统一 Authorizer；不转换成员 ACL，不允许旧链路绕过。
+    owner: ROCKL
+    createdAt: "2026-08-17T18:10:00+08:00"
+    dueDate: "2026-08-21T18:00:00+08:00"
+    status: Done
+    completionEvidence: DEC-2026-001
+    escalationOwner: ROCKL
+    escalateAt: "2026-08-22T18:00:00+08:00"
+    escalationStatus: N/A
+    escalationReason: N/A
+  - id: ACT-2026-004
+    relatedId: REQ-2026-001
+    triggerSource: Implementation Registration
+    nextAction: 获得明确授权后按已审计范围创建不可变本地提交，从该提交重建 QA 候选件并复核哈希；不得包含 7 个用户自有部署配置文件。
+    owner: ROCKL
+    createdAt: "2026-08-17T20:34:20+08:00"
+    dueDate: "2026-09-07T18:00:00+08:00"
+    status: Open
+    completionEvidence: N/A
+    escalationOwner: ROCKL
+    escalateAt: "2026-09-08T18:00:00+08:00"
+    escalationStatus: Pending
+    escalationReason: D1-R1 技术实现与自动验证已通过，但 QA 候选件仍来自 +dirty 工作树，尚未形成可复现的不可变提交。
+  - id: ACT-2026-005
+    relatedId: REQ-2026-001
+    triggerSource: Implementation Admission
+    nextAction: Implementation Admission 已通过，进入 TASK-20260817-SEC-ROCKL-01 的 D1 安全契约批次。
+    owner: ROCKL
+    createdAt: "2026-08-17T20:48:00+08:00"
+    dueDate: "2026-08-18T18:00:00+08:00"
+    status: Done
+    completionEvidence: IMPLEMENTATION_ADMISSION=PASS
+    escalationOwner: ROCKL
+    escalateAt: "2026-08-19T18:00:00+08:00"
+    escalationStatus: N/A
+    escalationReason: N/A

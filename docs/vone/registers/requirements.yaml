@@ -1,0 +1,78 @@
+schemaVersion: 1
+requirements:
+  - id: REQ-2026-001
+    title: 知识库树形管理与细粒度成员权限
+    document: requirements/2026-08-17-KB-RE-知识库树形管理与精细化权限.md
+    planDocument: plans/2026-08-17-KB-PL-知识库权限与树形管理实施计划.md
+    requestedAt: "2026-08-17T17:38:31+08:00"
+    timeBasis: Source Created At
+    sourceItemId: CODEX-20260817-WEKNORA-KB-ACL-TREE
+    sourceCustomerIds: []
+    commitmentType: Product Roadmap
+    contractReference: N/A
+    priority: P1
+    risk: High
+    status: Pending QA
+    owner: ROCKL
+    targetRelease: VONE-0.7.2.1
+    taskIds:
+      - TASK-20260817-SEC-ROCKL-01
+      - TASK-20260817-DB-ROCKL-01
+      - TASK-20260817-BE-ROCKL-01
+      - TASK-20260817-AI-ROCKL-01
+      - TASK-20260817-TREE-ROCKL-01
+      - TASK-20260817-FE-ROCKL-01
+      - TASK-20260817-QA-ROCKL-01
+    dependsOn: []
+    blocks: []
+    acceptanceCriteriaReady: true
+    implementationAdmission: PASS
+    technicalVerification: PASS
+    qaHandoffEvidence: releases/VONE-0.7.2.1/qa-execution-pack.md
+    qaEvidence: N/A
+    qaIndependence:
+      gate: EXCEPTION REQUIRED
+      reason: Technical, maintenance and QA assignments normalize to the same ROCKL identity; this is not independent QA.
+    releaseId: VONE-0.7.2.1
+    releaseAuthorization: BLOCKED
+    businessAcceptanceEvidence: Pending
+    acceptanceEvidence: requirements/2026-08-17-KB-RE-知识库树形管理与精细化权限.md
+    closureGaps:
+      - QA_EVIDENCE_MISSING
+      - QA_INDEPENDENCE_BLOCKED
+    lastStateChangedAt: "2026-08-18T01:24:46+08:00"
+    complexity:
+      baseline:
+        status: Assessed
+        requirementUncertainty: 3
+        impactRadius: 5
+        integrationComplexity: 5
+        verificationReleaseComplexity: 5
+        size: XL
+        assessedAt: "2026-08-17T17:38:31+08:00"
+        assessedBy: Workspace Owner
+        evidence: requirements/2026-08-17-KB-RE-知识库树形管理与精细化权限.md
+      observed:
+        status: Not Assessed
+        requirementUncertainty: null
+        impactRadius: null
+        integrationComplexity: null
+        verificationReleaseComplexity: null
+        size: Not Recorded
+        assessedAt: null
+        assessedBy: null
+        evidence: null
+    measurement:
+      dataStatus: Not Recorded
+      processProfile: Not Recorded
+      executionModel: Not Recorded
+      estimatedAiActiveHours: null
+      actualAiActiveHours: null
+      estimatedHumanActiveHours: null
+      actualHumanActiveHours: null
+      humanReviewQaHours: null
+      elapsedHours: null
+      blockedWaitHours: null
+      timeBasis: Unknown
+      confidence: Low
+      evidence: N/A

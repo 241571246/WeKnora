@@ -1,0 +1,28 @@
+schemaVersion: 1
+risksIssues:
+  - id: RISK-2026-001
+    type: Risk
+    relatedScope: Requirement
+    relatedWorkItem: REQ-2026-001
+    severity: High
+    description: 现有租户级列表、组织共享或 shared Agent 访问可能绕过新增的员工级知识库能力判断。
+    source: Current source scan
+    owner: Workspace Owner
+    identifiedAt: "2026-08-17T18:10:00+08:00"
+    dueDate: "2026-08-21T18:00:00+08:00"
+    status: Open
+    mitigation: 使用统一 KB Authorizer 收口自有、员工 ACL、组织共享、Agent 和 API Key 的判定，并建立 IDOR 回归矩阵。
+    closureEvidence: N/A
+  - id: RISK-2026-002
+    type: Risk
+    relatedScope: Requirement
+    relatedWorkItem: REQ-2026-001
+    severity: High
+    description: ACL 启用后若直接回滚到不识别新权限的旧后端，会恢复工作空间内的过宽知识库可见性。
+    source: Rollback design review
+    owner: Workspace Owner
+    identifiedAt: "2026-08-17T18:10:00+08:00"
+    dueDate: "2026-08-21T18:00:00+08:00"
+    status: Open
+    mitigation: 准备保留 ACL 强制的兼容回滚版本或维护窗口，禁止无 ACL 后端直接接管已启用权限的数据。
+    closureEvidence: N/A

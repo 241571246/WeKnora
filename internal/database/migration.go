@@ -21,7 +21,37 @@ var (
 	currentMigrationDirty   bool
 	migrationVersionSet     bool
 	currentMigrationError   string
+	voneMigrationStateMu    sync.RWMutex
+	voneMigrationVersion    uint
+	voneMigrationDirty      bool
+	voneMigrationVersionSet bool
+	voneMigrationError      string
 )
+
+// CachedVONEMigrationVersion exposes the independent customization ledger for
+// operator diagnostics without conflating it with upstream schema_migrations.
+func CachedVONEMigrationVersion() (uint, bool, bool) {
+	voneMigrationStateMu.RLock()
+	defer voneMigrationStateMu.RUnlock()
+	return voneMigrationVersion, voneMigrationDirty, voneMigrationVersionSet
+}
+
+func CachedVONEMigrationError() string {
+	voneMigrationStateMu.RLock()
+	defer voneMigrationStateMu.RUnlock()
+	return voneMigrationError
+}
+
+func setVONEMigrationState(version uint, dirty bool, errMsg string, known bool) {
+	voneMigrationStateMu.Lock()
+	defer voneMigrationStateMu.Unlock()
+	if known {
+		voneMigrationVersion = version
+		voneMigrationDirty = dirty
+		voneMigrationVersionSet = true
+	}
+	voneMigrationError = errMsg
+}
 
 // CachedMigrationVersion returns the migration version captured at startup.
 // Returns (version, dirty, ok). ok is false if the version was never captured.
@@ -95,6 +125,79 @@ type MigrationOptions struct {
 	// parsing a URL-based DSN, which avoids breakage when the path contains
 	// spaces (e.g. macOS "Application Support").
 	SQLiteDBPath string
+}
+
+const voneMigrationTable = "vone_schema_migrations"
+
+// RunVONEMigrationsWithOptions applies the upgrade-safe VONE extension track.
+// It deliberately uses its own migration table and directories so pulling a
+// future upstream migration cannot collide with local release numbering.
+func RunVONEMigrationsWithOptions(dsn string, opts MigrationOptions) error {
+	ctx := context.Background()
+	migrationsPath := "file://migrations/vone/versioned"
+	var m *migrate.Migrate
+	var err error
+
+	if opts.SQLiteDBPath != "" {
+		migrationsPath = "file://migrations/vone/sqlite"
+		sqlDB, openErr := sql.Open("sqlite3", opts.SQLiteDBPath)
+		if openErr != nil {
+			return fmt.Errorf("open sqlite db for VONE migration: %w", openErr)
+		}
+		driver, driverErr := sqlite3migrate.WithInstance(sqlDB, &sqlite3migrate.Config{
+			MigrationsTable: voneMigrationTable,
+		})
+		if driverErr != nil {
+			_ = sqlDB.Close()
+			return fmt.Errorf("create sqlite VONE migration driver: %w", driverErr)
+		}
+		m, err = migrate.NewWithDatabaseInstance(migrationsPath, "sqlite3", driver)
+	} else {
+		separator := "?"
+		if strings.Contains(dsn, "?") {
+			separator = "&"
+		}
+		voneDSN := dsn + separator + "x-migrations-table=" + voneMigrationTable
+		m, err = migrate.New(migrationsPath, voneDSN)
+	}
+	if err != nil {
+		setVONEMigrationState(0, false, err.Error(), false)
+		return fmt.Errorf("create VONE migration instance: %w", err)
+	}
+	defer m.Close()
+
+	version, dirty, versionErr := m.Version()
+	if versionErr != nil && versionErr != migrate.ErrNilVersion {
+		setVONEMigrationState(0, false, versionErr.Error(), false)
+		return fmt.Errorf("read VONE migration version: %w", versionErr)
+	}
+	if dirty {
+		setVONEMigrationState(version, true, "VONE migration is dirty", true)
+		if !opts.AutoRecoverDirty {
+			return fmt.Errorf("VONE migration is dirty at version %d", version)
+		}
+		if err := recoverFromDirtyState(ctx, m, version); err != nil {
+			return fmt.Errorf("recover VONE migration at version %d: %w", version, err)
+		}
+	}
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		if failedVersion, failedDirty, stateErr := m.Version(); stateErr == nil {
+			setVONEMigrationState(failedVersion, failedDirty, err.Error(), true)
+		} else {
+			setVONEMigrationState(version, dirty, err.Error(), versionErr == nil)
+		}
+		return fmt.Errorf("run VONE migrations: %w", err)
+	}
+	if finalVersion, finalDirty, stateErr := m.Version(); stateErr == nil {
+		setVONEMigrationState(finalVersion, finalDirty, "", true)
+	} else if stateErr == migrate.ErrNilVersion {
+		setVONEMigrationState(0, false, "", false)
+	} else {
+		setVONEMigrationState(version, dirty, stateErr.Error(), versionErr == nil)
+		return fmt.Errorf("read final VONE migration version: %w", stateErr)
+	}
+	logger.Infof(ctx, "VONE extension migrations are up to date (table=%s)", voneMigrationTable)
+	return nil
 }
 
 // RunMigrationsWithOptions executes all pending database migrations with custom options

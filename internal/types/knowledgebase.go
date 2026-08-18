@@ -144,6 +144,10 @@ type KnowledgeBase struct {
 	// 仅在列表场景由 handler 批量回填，不落库；为空表示创建者无法解析（用户已删除、
 	// CreatorID 为空的老数据等）。前端用它在卡片来源徽章上做 mine vs workspace 的二分。
 	CreatorName string `yaml:"-"                       json:"creator_name,omitempty"  gorm:"-"`
+	// MyCapabilities is the caller-specific ACL projection populated by the
+	// list service. It is never persisted and lets clients hide forbidden
+	// operations without re-querying every card.
+	MyCapabilities []KBCapability `yaml:"-" json:"my_capabilities,omitempty" gorm:"-"`
 }
 
 // KnowledgeBaseConfig represents the knowledge base configuration

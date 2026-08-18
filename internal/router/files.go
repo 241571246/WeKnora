@@ -383,6 +383,7 @@ func serveKBScopedFiles(
 		apiKeyRetrieve(apiKeyFullAccess()),
 		middleware.AllowFileServeAPIKey(),
 		g.Viewer(),
+		g.KBCapability("id", types.KBCapabilityDocumentPreview),
 		g.KBAccessRead("id"),
 		newKBScopedFileServeHandlerWithResources(
 			tenantService,

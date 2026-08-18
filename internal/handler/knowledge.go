@@ -16,10 +16,8 @@ import (
 	"github.com/Tencent/WeKnora/internal/agent/tools"
 	"github.com/Tencent/WeKnora/internal/application/repository"
 	"github.com/Tencent/WeKnora/internal/application/service"
-	"github.com/Tencent/WeKnora/internal/config"
 	"github.com/Tencent/WeKnora/internal/errors"
 	"github.com/Tencent/WeKnora/internal/logger"
-	"github.com/Tencent/WeKnora/internal/middleware"
 	"github.com/Tencent/WeKnora/internal/tracing/langfuse"
 	"github.com/Tencent/WeKnora/internal/types"
 	"github.com/Tencent/WeKnora/internal/types/interfaces"
@@ -31,60 +29,104 @@ import (
 
 // KnowledgeHandler processes HTTP requests related to knowledge resources
 type KnowledgeHandler struct {
-	cfg               *config.Config
 	kgService         interfaces.KnowledgeService
 	kbService         interfaces.KnowledgeBaseService
 	kbShareService    interfaces.KBShareService
 	agentShareService interfaces.AgentShareService
 	asynqClient       interfaces.TaskEnqueuer
 	spanRepo          repository.KnowledgeSpanRepository
+	kbAuthorizer      interfaces.KBAuthorizer
 }
 
 // NewKnowledgeHandler creates a new knowledge handler instance
 func NewKnowledgeHandler(
-	cfg *config.Config,
 	kgService interfaces.KnowledgeService,
 	kbService interfaces.KnowledgeBaseService,
 	kbShareService interfaces.KBShareService,
 	agentShareService interfaces.AgentShareService,
 	asynqClient interfaces.TaskEnqueuer,
 	spanRepo repository.KnowledgeSpanRepository,
+	kbAuthorizer interfaces.KBAuthorizer,
 ) *KnowledgeHandler {
 	return &KnowledgeHandler{
-		cfg:               cfg,
 		kgService:         kgService,
 		kbService:         kbService,
 		kbShareService:    kbShareService,
 		agentShareService: agentShareService,
 		asynqClient:       asynqClient,
 		spanRepo:          spanRepo,
+		kbAuthorizer:      kbAuthorizer,
 	}
 }
 
-// requireKBOwnershipOrAdmin enforces the same "KB creator OR Admin+" matrix
-// used by OwnedKBOrAdmin for routes whose KB id comes from the request body.
-func (h *KnowledgeHandler) requireKBOwnershipOrAdmin(c *gin.Context, kbID string) error {
-	creator, err := resolveKBCreatorByKBID(c, h.kbService, kbID)
-	evalErr := middleware.EvaluateOwnershipOrRole(
-		c.Request.Context(),
-		h.cfg,
-		types.TenantRoleAdmin,
-		creator,
-		err,
-	)
-	if evalErr == nil {
+// requireKBCapabilityByID is the body-ID equivalent of the route capability
+// middleware. It preserves off/shadow/enforce rollout semantics and is used by
+// batch endpoints that cannot resolve a KB from a path parameter.
+func (h *KnowledgeHandler) requireKBCapabilityByID(c *gin.Context, kbID string, capability types.KBCapability) error {
+	mode := types.CurrentKBACLMode()
+	if mode == types.KBACLModeOff {
 		return nil
 	}
-	if goerrors.Is(evalErr, middleware.ErrResourceNotFound) {
-		return errors.NewNotFoundError("knowledge base not found")
+	if h.kbAuthorizer == nil {
+		types.RecordKBACLError()
+		return errors.NewServiceUnavailableError("knowledge-base authorizer unavailable")
 	}
-	if goerrors.Is(evalErr, middleware.ErrOwnershipForbidden) {
-		return errors.NewForbiddenError("No permission to operate on this knowledge base")
+	ctx := c.Request.Context()
+	tenantID, ok := types.TenantIDFromContext(ctx)
+	userID, userOK := types.UserIDFromContext(ctx)
+	if !ok || tenantID == 0 || !userOK || userID == "" {
+		return errors.NewUnauthorizedError("Unauthorized")
 	}
-	logger.ErrorWithFields(c.Request.Context(), evalErr, map[string]interface{}{
-		"kb_id": secutils.SanitizeForLog(kbID),
+	decision, err := h.kbAuthorizer.Authorize(ctx, interfaces.KBPolicyRequest{
+		TenantID: tenantID, KBID: kbID, UserID: userID,
+		TenantRole: types.TenantRoleFromContext(ctx), Capability: capability,
+		AgentID: c.Query("agent_id"),
 	})
-	return errors.NewInternalServerError("cannot verify knowledge base ownership")
+	if err != nil {
+		types.RecordKBACLError()
+		return errors.NewServiceUnavailableError("cannot verify knowledge-base capability")
+	}
+	if decision.Allowed {
+		types.RecordKBACLAllowed()
+		return nil
+	}
+	if mode == types.KBACLModeShadow {
+		types.RecordKBACLShadowDenied()
+		logger.Infof(ctx, "[kb_acl_metric] shadow_body_denied=1 kb=%s capability=%s user=%s", kbID, capability, userID)
+		return nil
+	}
+	types.RecordKBACLDenied()
+	return errors.NewForbiddenError("knowledge-base capability denied")
+}
+
+func (h *KnowledgeHandler) filterKnowledgesByCapability(
+	c *gin.Context, rows []*types.Knowledge, capability types.KBCapability,
+) ([]*types.Knowledge, error) {
+	if types.CurrentKBACLMode() == types.KBACLModeOff {
+		return rows, nil
+	}
+	allowedKBs := make(map[string]bool)
+	checkedKBs := make(map[string]bool)
+	result := make([]*types.Knowledge, 0, len(rows))
+	for _, row := range rows {
+		if row == nil {
+			continue
+		}
+		if !checkedKBs[row.KnowledgeBaseID] {
+			checkedKBs[row.KnowledgeBaseID] = true
+			if err := h.requireKBCapabilityByID(c, row.KnowledgeBaseID, capability); err == nil {
+				allowedKBs[row.KnowledgeBaseID] = true
+			} else if types.CurrentKBACLMode() == types.KBACLModeEnforce {
+				if appErr, ok := errors.IsAppError(err); !ok || appErr.Code != errors.ErrForbidden {
+					return nil, err
+				}
+			}
+		}
+		if allowedKBs[row.KnowledgeBaseID] || types.CurrentKBACLMode() == types.KBACLModeShadow {
+			result = append(result, row)
+		}
+	}
+	return result, nil
 }
 
 // validateKnowledgeBaseAccess validates access permissions to a knowledge base
@@ -1112,7 +1154,7 @@ func (h *KnowledgeHandler) MoveKnowledgeToFolder(c *gin.Context) {
 		return
 	}
 
-	kbID, effectiveTenantID, err := h.requireKnowledgeWriteAccess(c, req.KBID)
+	kbID, effectiveTenantID, err := h.requireKnowledgeWriteAccess(c, req.KBID, types.KBCapabilityFolderManage)
 	if err != nil {
 		c.Error(err)
 		return
@@ -1185,10 +1227,6 @@ func (h *KnowledgeHandler) RenameKnowledgeFolder(c *gin.Context) {
 		c.Error(errors.NewForbiddenError("No permission to modify knowledge"))
 		return
 	}
-	if err := h.requireKBOwnershipOrAdmin(c, kbID); err != nil {
-		c.Error(err)
-		return
-	}
 	ctx = context.WithValue(ctx, types.TenantIDContextKey, effectiveTenantID)
 
 	affected, err := h.kgService.RenameKnowledgeFolder(ctx, kbID, req.From, req.To)
@@ -1235,6 +1273,7 @@ func dedupeKnowledgeIDs(raw []string) []string {
 func (h *KnowledgeHandler) requireKnowledgeWriteAccess(
 	c *gin.Context,
 	requestedKBID string,
+	capability types.KBCapability,
 ) (string, uint64, error) {
 	_, kbID, effectiveTenantID, permission, err := h.validateKnowledgeBaseAccessWithKBID(c, requestedKBID)
 	if err != nil {
@@ -1243,7 +1282,7 @@ func (h *KnowledgeHandler) requireKnowledgeWriteAccess(
 	if permission != types.OrgRoleAdmin && permission != types.OrgRoleEditor {
 		return "", 0, errors.NewForbiddenError("No permission to modify knowledge")
 	}
-	if err := h.requireKBOwnershipOrAdmin(c, kbID); err != nil {
+	if err := h.requireKBCapabilityByID(c, kbID, capability); err != nil {
 		return "", 0, err
 	}
 	return kbID, effectiveTenantID, nil
@@ -1383,7 +1422,7 @@ func (h *KnowledgeHandler) BatchDeleteKnowledge(c *gin.Context) {
 		c.Error(errors.NewForbiddenError("No permission to delete knowledge"))
 		return
 	}
-	if err := h.requireKBOwnershipOrAdmin(c, kbID); err != nil {
+	if err := h.requireKBCapabilityByID(c, kbID, types.KBCapabilityDocumentDelete); err != nil {
 		c.Error(err)
 		return
 	}
@@ -1529,7 +1568,7 @@ func (h *KnowledgeHandler) DownloadKnowledgeFile(c *gin.Context) {
 	// Keep a handler-level Editor check in addition to the route guard. The
 	// original file is more sensitive than parsed-content reads and must not
 	// be downloadable through a read-only organization share.
-	_, effCtx, err := h.resolveKnowledgeAndValidateKBAccess(c, id, types.OrgRoleEditor)
+	knowledge, effCtx, err := h.resolveKnowledgeAndValidateKBAccess(c, id, types.OrgRoleEditor)
 	if err != nil {
 		c.Error(err)
 		return
@@ -1550,6 +1589,8 @@ func (h *KnowledgeHandler) DownloadKnowledgeFile(c *gin.Context) {
 		secutils.SanitizeForLog(id),
 		secutils.SanitizeForLog(filename),
 	)
+	auditKBHTTPAction(c, types.AuditActionKnowledgeDownloaded, knowledge.KnowledgeBaseID,
+		"knowledge", knowledge.ID, map[string]any{"file_name": filename})
 
 	// Set response headers for file download
 	c.Header("Content-Description", "File Transfer")
@@ -1766,6 +1807,11 @@ func (h *KnowledgeHandler) GetKnowledgeBatch(c *gin.Context) {
 	if err != nil {
 		logger.ErrorWithFields(ctx, err, nil)
 		c.Error(errors.NewInternalServerError("Failed to retrieve knowledge list").WithDetails(err.Error()))
+		return
+	}
+	knowledges, err = h.filterKnowledgesByCapability(c, knowledges, types.KBCapabilityDocumentPreview)
+	if err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -2112,6 +2158,12 @@ func (h *KnowledgeHandler) UpdateKnowledgeTagBatch(c *gin.Context) {
 			ctx = effCtx
 		}
 	}
+	if authorizedKBID != "" {
+		if err := h.requireKBCapabilityByID(c, authorizedKBID, types.KBCapabilityDocumentEdit); err != nil {
+			c.Error(err)
+			return
+		}
+	}
 	if err := h.kgService.UpdateKnowledgeTagBatch(ctx, authorizedKBID, req.Updates); err != nil {
 		logger.ErrorWithFields(ctx, err, nil)
 		c.Error(err)
@@ -2327,6 +2379,15 @@ func (h *KnowledgeHandler) SearchKnowledge(c *gin.Context) {
 			c.Error(errors.NewInternalServerError("Failed to search knowledge").WithDetails(err.Error()))
 			return
 		}
+		knowledges, err = h.filterKnowledgesByCapability(c, knowledges, types.KBCapabilityDocumentsList)
+		if err != nil {
+			c.Error(err)
+			return
+		}
+		if int64(len(knowledges)) < total {
+			total = int64(len(knowledges))
+			hasMore = false
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"success":  true,
 			"data":     knowledges,
@@ -2352,6 +2413,15 @@ func (h *KnowledgeHandler) SearchKnowledge(c *gin.Context) {
 			c.Error(errors.NewInternalServerError("Failed to search knowledge").WithDetails(err.Error()))
 			return
 		}
+		knowledges, err = h.filterKnowledgesByCapability(c, knowledges, types.KBCapabilityDocumentsList)
+		if err != nil {
+			c.Error(err)
+			return
+		}
+		if int64(len(knowledges)) < total {
+			total = int64(len(knowledges))
+			hasMore = false
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"success":  true,
 			"data":     knowledges,
@@ -2367,6 +2437,15 @@ func (h *KnowledgeHandler) SearchKnowledge(c *gin.Context) {
 		logger.ErrorWithFields(ctx, err, nil)
 		c.Error(errors.NewInternalServerError("Failed to search knowledge").WithDetails(err.Error()))
 		return
+	}
+	knowledges, err = h.filterKnowledgesByCapability(c, knowledges, types.KBCapabilityDocumentsList)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	if int64(len(knowledges)) < total {
+		total = int64(len(knowledges))
+		hasMore = false
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -2448,7 +2527,7 @@ func (h *KnowledgeHandler) MoveKnowledge(c *gin.Context) {
 		c.Error(errors.NewForbiddenError("No permission to access source knowledge base"))
 		return
 	}
-	if err := h.requireKBOwnershipOrAdmin(c, req.SourceKBID); err != nil {
+	if err := h.requireKBCapabilityByID(c, req.SourceKBID, types.KBCapabilityDocumentDelete); err != nil {
 		c.Error(err)
 		return
 	}
@@ -2467,7 +2546,7 @@ func (h *KnowledgeHandler) MoveKnowledge(c *gin.Context) {
 		c.Error(errors.NewForbiddenError("No permission to access target knowledge base"))
 		return
 	}
-	if err := h.requireKBOwnershipOrAdmin(c, req.TargetKBID); err != nil {
+	if err := h.requireKBCapabilityByID(c, req.TargetKBID, types.KBCapabilityDocumentUpload); err != nil {
 		c.Error(err)
 		return
 	}
@@ -2743,6 +2822,10 @@ func (h *KnowledgeHandler) BatchReparseKnowledge(c *gin.Context) {
 	}
 	if permission != types.OrgRoleAdmin && permission != types.OrgRoleEditor {
 		c.Error(errors.NewForbiddenError("no permission to reparse knowledge in this kb"))
+		return
+	}
+	if err := h.requireKBCapabilityByID(c, kbID, types.KBCapabilityDocumentReparse); err != nil {
+		c.Error(err)
 		return
 	}
 	ctx = context.WithValue(ctx, types.TenantIDContextKey, effectiveTenantID)

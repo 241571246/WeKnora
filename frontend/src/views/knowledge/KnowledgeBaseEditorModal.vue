@@ -424,6 +424,11 @@
                   <KBShareSettings :kb-id="activeKbId" :can-share="canShareKB" />
                 </div>
 
+                <div v-if="editorMode === 'edit' && activeKbId && currentSection === 'members'" class="section">
+                  <KBMemberSettings :kb-id="activeKbId"
+                    :can-manage-owners="kbCapabilities.includes('kb.owners.manage')" />
+                </div>
+
                 <!-- 活动记录（仅编辑模式，KB 所属租户内 Owner/Admin） -->
                 <div v-if="editorMode === 'edit' && activeKbId && canViewActivity && currentSection === 'activity'" class="section">
                   <KnowledgeBaseActivitySettings :kb-id="activeKbId" :active="currentSection === 'activity'" />
@@ -460,11 +465,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import KbCreateContextualGuide from '@/components/KbCreateContextualGuide.vue'
 import { KB_EDITOR_FOCUS_SECTION_EVENT, markContextualGuideDone } from '@/config/contextualGuides'
 import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
-import { createKnowledgeBase, getKnowledgeBaseById, listKnowledgeFiles, updateKnowledgeBase, rebuildKBIndex } from '@/api/knowledge-base'
+import { createKnowledgeBase, getKnowledgeBaseById, getKBAccess, listKnowledgeFiles, updateKnowledgeBase, rebuildKBIndex, type KBCapability } from '@/api/knowledge-base'
 import { updateKBConfig, type KBModelConfigRequest } from '@/api/initialization'
 import { type ModelConfig } from '@/api/model'
 import { useChatResourcesStore } from '@/stores/chatResources'
@@ -482,6 +487,7 @@ import GraphSettings from './settings/GraphSettings.vue'
 import KBShareSettings from './settings/KBShareSettings.vue'
 import DataSourceSettings from './settings/DataSourceSettings.vue'
 import KnowledgeBaseActivitySettings from './settings/KnowledgeBaseActivitySettings.vue'
+import KBMemberSettings from './settings/KBMemberSettings.vue'
 import { useI18n } from 'vue-i18n'
 
 const uiStore = useUIStore()
@@ -569,6 +575,7 @@ const dsCount = ref(0)
 // only tenant Admin+ can mutate their share settings.
 const kbCreatorId = ref<string>('')
 const kbTenantId = ref<number>(0)
+const kbCapabilities = ref<KBCapability[]>([])
 
 // Backend gate for /knowledge-bases/:id/shares (POST/PUT/DELETE) is
 // g.OwnedKBOrAdmin(): only the KB creator or tenant Admin+ may mutate
@@ -590,7 +597,7 @@ const isKbOwner = computed(() => {
 const canViewActivity = computed(() => {
   if (editorMode.value !== 'edit' || !activeKbId.value) return false
   if (Number(kbTenantId.value || 0) !== Number(authStore.currentTenantId || 0)) return false
-  return isKbOwner.value || authStore.hasRole('admin')
+  return kbCapabilities.value.includes('kb.members.manage') || isKbOwner.value || authStore.hasRole('admin')
 })
 // 用户是否在分块设置中手动改过任何值。一旦为 true，就不再根据索引策略自动调整默认分块参数。
 const chunkingDirty = ref(false)
@@ -614,17 +621,18 @@ const DEFAULT_CHUNKING_PRESET = {
 } as const
 
 const navItems = computed(() => {
-  const items: { key: string; icon: string; label: string; badge?: number }[] = [
+  const canEditSettings = editorMode.value !== 'edit' || !activeKbId.value || kbCapabilities.value.includes('kb.settings.edit')
+  const items: { key: string; icon: string; label: string; badge?: number }[] = canEditSettings ? [
     { key: 'basic', icon: 'info-circle', label: t('knowledgeEditor.sidebar.basic') },
     { key: 'models', icon: 'control-platform', label: t('knowledgeEditor.sidebar.models') },
     // VectorStore binding section — present in both create and edit
     // modes. Create mode shows a dropdown; edit mode shows the bound
     // store read-only with an immutability hint.
     { key: 'vectorStore', icon: 'data-base', label: t('knowledgeEditor.sidebar.vectorStore') }
-  ]
-  if (formData.value?.type === 'faq') {
+  ] : []
+  if (canEditSettings && formData.value?.type === 'faq') {
     items.push({ key: 'faq', icon: 'help-circle', label: t('knowledgeEditor.sidebar.faq') })
-  } else {
+  } else if (canEditSettings) {
     items.push(
       { key: 'parser', icon: 'file-search', label: t('settings.parserEngine') },
       { key: 'multimodal', icon: 'image', label: t('knowledgeEditor.sidebar.multimodal') },
@@ -638,8 +646,11 @@ const navItems = computed(() => {
       items.push({ key: 'datasource', icon: 'cloud-download', label: t('knowledgeEditor.sidebar.datasource'), badge: dsCount.value || undefined })
     }
   }
-  if (editorMode.value === 'edit' && activeKbId.value && !authStore.isLiteMode) {
+  if (editorMode.value === 'edit' && activeKbId.value && !authStore.isLiteMode && canShareKB.value) {
     items.push({ key: 'share', icon: 'share', label: t('knowledgeEditor.sidebar.share') })
+  }
+  if (editorMode.value === 'edit' && activeKbId.value && kbCapabilities.value.includes('kb.members.manage')) {
+    items.push({ key: 'members', icon: 'usergroup', label: t('kbAcl.members.title') })
   }
   if (canViewActivity.value) {
     items.push({ key: 'activity', icon: 'history', label: t('knowledgeEditor.sidebar.activity') })
@@ -671,7 +682,7 @@ const navGroups = computed(() => {
     {
       key: 'integration',
       label: t('knowledgeEditor.navGroups.integration'),
-      items: pickItems(['share']),
+      items: pickItems(['share', 'members']),
     },
     {
       key: 'management',
@@ -837,9 +848,20 @@ const loadKBData = async (kbIdOverride?: string) => {
   
   loading.value = true
   try {
+    const accessResult = await getKBAccess(kbId)
+    kbCapabilities.value = ((accessResult as any)?.data?.capabilities || []) as KBCapability[]
+    if (!kbCapabilities.value.includes('kb.metadata.read') && kbCapabilities.value.includes('kb.members.manage')) {
+      kbTenantId.value = Number(authStore.currentTenantId || 0)
+      formData.value = { type: 'document' }
+      await nextTick()
+      currentSection.value = 'members'
+      return
+    }
     const [kbInfo, filesResult] = await Promise.all([
       getKnowledgeBaseById(kbId),
-      listKnowledgeFiles(kbId, { page: 1, page_size: 1 })
+      kbCapabilities.value.includes('kb.documents.list')
+        ? listKnowledgeFiles(kbId, { page: 1, page_size: 1 })
+        : Promise.resolve({ total: 0 }),
     ])
     
     if (!kbInfo || !kbInfo.data) {
@@ -946,6 +968,10 @@ const loadKBData = async (kbIdOverride?: string) => {
     }
     initialStorageProvider.value = formData.value.storageProvider
     initialIndexingStrategy.value = { ...formData.value.indexingStrategy }
+    await nextTick()
+    if (!navItems.value.some(item => item.key === currentSection.value)) {
+      currentSection.value = navItems.value[0]?.key || 'members'
+    }
   } catch (error) {
     console.error('Failed to load knowledge base data:', error)
     MessagePlugin.error(t('knowledgeEditor.messages.loadDataFailed'))
@@ -1523,6 +1549,7 @@ const resetState = () => {
   chunkingDirty.value = false
   kbCreatorId.value = ''
   kbTenantId.value = 0
+  kbCapabilities.value = []
 }
 
 // 关闭弹窗
