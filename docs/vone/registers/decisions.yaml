@@ -10,3 +10,13 @@ decisions:
     evidence: User confirmation in Codex task and canonical implementation plan V1.0
     supersedes: N/A
     status: Active
+  - id: DEC-2026-002
+    decisionType: QA Independence Exception
+    relatedScope: BUG-2026-001; TASK-20260817-TREE-ROCKL-01
+    decision: Tim / T001 approves ROCKL self-verification as a scoped QA independence exception for the tree-filter frontend fix only. Tim does not execute testing. The approval is not Independent QA and does not cover the full REQ-2026-001 ACL, migration, B48 matrix or production release.
+    approver: Tim / T001
+    decidedAt: "2026-08-18T11:34:46+08:00"
+    effectiveAt: "2026-08-18T11:34:46+08:00"
+    evidence: Approval conveyed by ROCKL in the Codex task on 2026-08-18; bugs/BUG-2026-001-树形节点筛选未联动本空间知识库列表.md
+    supersedes: N/A
+    status: Active

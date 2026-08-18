@@ -45,3 +45,13 @@ export function unclassifiedKnowledgeBaseIDs(allIDs: string[], bindings: KBColle
   const bound = new Set(bindings.map(item => item.kb_id))
   return allIDs.filter(id => !bound.has(id))
 }
+
+export function filterRowsByKnowledgeBaseIDs<T>(
+  rows: T[],
+  knowledgeBaseIDs: string[] | null,
+  getKnowledgeBaseID: (row: T) => string = row => String((row as { id?: unknown }).id ?? ''),
+): T[] {
+  if (knowledgeBaseIDs === null) return rows
+  const allowed = new Set(knowledgeBaseIDs.map(String))
+  return rows.filter(row => allowed.has(String(getKnowledgeBaseID(row))))
+}

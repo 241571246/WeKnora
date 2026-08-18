@@ -1,2 +1,84 @@
 schemaVersion: 1
-bugs: []
+bugs:
+  - id: BUG-2026-001
+    title: 树形节点筛选未联动本空间知识库列表
+    document: bugs/BUG-2026-001-树形节点筛选未联动本空间知识库列表.md
+    planDocument: plans/2026-08-17-KB-PL-知识库权限与树形管理实施计划.md
+    reportedAt: "2026-08-18T11:05:52+08:00"
+    timeBasis: User Reported At
+    sourceItemId: CODEX-20260818-WEKNORA-TREE-FILTER
+    severity: Medium
+    priority: P1
+    status: Verified
+    owner: ROCKL
+    foundIn: UAT
+    detectionRelease: VONE-0.7.2.1
+    observationWindow: Local candidate 3693b799 manual verification
+    affectedRequirements:
+      - REQ-2026-001
+    introducedBy:
+      - TASK-20260817-TREE-ROCKL-01
+      - 3693b7990176217304bc921bd01f422a8f1d5a55
+    attributionStatus: Confirmed
+    attributionEvidence: frontend/src/views/knowledge/KnowledgeBaseList.vue renders sortedMineKbs while the collection filter only derives filteredKnowledgeBases
+    fixTaskIds:
+      - TASK-20260817-TREE-ROCKL-01
+    fixRelease: VONE-0.7.2.1
+    triageEvidence: bugs/BUG-2026-001-树形节点筛选未联动本空间知识库列表.md
+    implementationAdmission: PASS
+    technicalVerification: PASS
+    qaHandoffEvidence: bugs/BUG-2026-001-树形节点筛选未联动本空间知识库列表.md
+    qaIndependence:
+      gate: EXCEPTION APPROVED
+      verificationMode: Self Verification
+      independentReviewer: Not assigned
+      exceptionRequestedAt: "2026-08-18T10:27:00+08:00"
+      decisionDueAt: "N/A: decided 2026-08-18T11:34:46+08:00"
+      exceptionApprover: Tim / T001
+      escalationOwner: ROCKL
+      escalatedAt: "N/A: approved before escalation"
+      exceptionScope: BUG-2026-001 tree-filter frontend regression and TASK-20260817-TREE-ROCKL-01 local fix only; excludes the full REQ-2026-001 ACL, migration, B48 matrix and production release.
+      compensatingControls: Authenticated Chrome self-verification; targeted tests 7/7; full frontend tests 351/351; i18n 11/11; type-check and production build PASS; local image checksum and HTTP smoke; scoped diff review; no backend, ACL or database change.
+      reason: Tim / T001 approved ROCKL self-verification for this narrowly scoped frontend bug; Tim did not execute testing, so the evidence is not Independent QA and the exception does not apply release-wide.
+      evidence: DEC-2026-002; approval conveyed by ROCKL in the Codex task on 2026-08-18; bugs/BUG-2026-001-树形节点筛选未联动本空间知识库列表.md
+    regressionEvidence: Authenticated local Chrome verified 3 cards -> VCOS node 1 card (vone-pms) -> All 3 cards; targeted tests 7/7, full tests 351/351, i18n 11/11, type-check and production build PASS
+    releaseAuthorization: BLOCKED
+    reporterConfirmation: Pending
+    closureGaps:
+      - RELEASE_AUTHORIZATION_BLOCKED
+    lastStateChangedAt: "2026-08-18T11:34:46+08:00"
+    complexity:
+      baseline:
+        status: Assessed
+        requirementUncertainty: 1
+        impactRadius: 2
+        integrationComplexity: 1
+        verificationReleaseComplexity: 2
+        size: XS
+        assessedAt: "2026-08-18T11:05:52+08:00"
+        assessedBy: ROCKL / Codex recorder
+        evidence: bugs/BUG-2026-001-树形节点筛选未联动本空间知识库列表.md
+      observed:
+        status: Assessed
+        requirementUncertainty: 1
+        impactRadius: 2
+        integrationComplexity: 1
+        verificationReleaseComplexity: 2
+        size: XS
+        assessedAt: "2026-08-18T11:21:53+08:00"
+        assessedBy: ROCKL / Codex recorder
+        evidence: bugs/BUG-2026-001-树形节点筛选未联动本空间知识库列表.md
+    measurement:
+      dataStatus: Not Recorded
+      processProfile: Controlled
+      executionModel: Single AI Agent
+      estimatedAiActiveHours: null
+      actualAiActiveHours: null
+      estimatedHumanActiveHours: null
+      actualHumanActiveHours: null
+      humanReviewQaHours: null
+      elapsedHours: null
+      blockedWaitHours: null
+      timeBasis: Unknown
+      confidence: Low
+      evidence: N/A

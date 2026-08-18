@@ -374,9 +374,9 @@
           </template>
         </div>
 
-        <div v-if="spaceSelection === 'mine' && sortedMineKbs.length > 0" class="kb-card-wrap">
+        <div v-if="spaceSelection === 'mine' && filteredMineKbs.length > 0" class="kb-card-wrap">
           <!-- 置顶分组标题 -->
-          <div v-if="sortedMineKbs[0] && sortedMineKbs[0].is_pinned" class="kb-section-header kb-section-header-pinned"
+          <div v-if="filteredMineKbs[0] && filteredMineKbs[0].is_pinned" class="kb-section-header kb-section-header-pinned"
             role="button" tabindex="0" @click="toggleKbSection('pinned')"
             @keydown.enter.prevent="toggleKbSection('pinned')"
             @keydown.space.prevent="toggleKbSection('pinned')">
@@ -388,14 +388,14 @@
           </div>
           <!-- 我的知识库。「已置顶」由顶部 header 接管；其余各分段各打各的
                标题——见「全部」tab 同处注释。 -->
-          <template v-for="(kb, index) in sortedMineKbs" :key="kb.id">
+          <template v-for="(kb, index) in filteredMineKbs" :key="kb.id">
             <!-- 我创建的：第一张非置顶的我创建卡片前打标题，无论上方是否
                  有「已置顶」段都要显示，和「本空间 · 仅查看」对齐——见
                  「全部」tab 同处注释。 -->
             <div v-if="showShareGroupHeaders
               && isMyKb(kb)
               && !kb.is_pinned
-              && (index === 0 || sortedMineKbs[index - 1].is_pinned)" class="kb-section-header" role="button"
+              && (index === 0 || filteredMineKbs[index - 1].is_pinned)" class="kb-section-header" role="button"
               tabindex="0" @click="toggleKbSection('mine')"
               @keydown.enter.prevent="toggleKbSection('mine')"
               @keydown.space.prevent="toggleKbSection('mine')">
@@ -411,8 +411,8 @@
               && !isMyKb(kb)
               && !kb.is_pinned
               && (index === 0
-                || isMyKb(sortedMineKbs[index - 1])
-                || sortedMineKbs[index - 1].is_pinned)" class="kb-section-header" role="button" tabindex="0"
+                || isMyKb(filteredMineKbs[index - 1])
+                || filteredMineKbs[index - 1].is_pinned)" class="kb-section-header" role="button" tabindex="0"
               @click="toggleKbSection('tenantOthers')"
               @keydown.enter.prevent="toggleKbSection('tenantOthers')"
               @keydown.space.prevent="toggleKbSection('tenantOthers')">
@@ -537,8 +537,8 @@
         <div v-if="spaceSelectionOrgId && spaceKbsLoading" class="kb-list-main-loading">
           <t-loading size="medium" text="" />
         </div>
-        <div v-else-if="spaceSelectionOrgId && sortedSpaceKbsList.length > 0" class="kb-card-wrap">
-          <template v-for="(shared, index) in sortedSpaceKbsList"
+        <div v-else-if="spaceSelectionOrgId && filteredSpaceKbsList.length > 0" class="kb-card-wrap">
+          <template v-for="(shared, index) in filteredSpaceKbsList"
             :key="'shared-' + (shared.share_id || `agent-${shared.knowledge_base?.id}-${shared.source_from_agent?.agent_id || ''}`)">
             <!-- 我共享的：本空间下我自己创建并共享进来的条目，只在第一条 is_mine 上挂标题 -->
             <div v-if="showShareGroupHeaders && shared.is_mine && index === 0" class="kb-section-header"
@@ -555,7 +555,7 @@
             <div v-if="showShareGroupHeaders
               && !shared.is_mine
               && isSharedKbEditable(shared.permission)
-              && (index === 0 || sortedSpaceKbsList[index - 1].is_mine)" class="kb-section-header"
+              && (index === 0 || filteredSpaceKbsList[index - 1].is_mine)" class="kb-section-header"
               role="button" tabindex="0" @click="toggleKbSection('sharedEditable')"
               @keydown.enter.prevent="toggleKbSection('sharedEditable')"
               @keydown.space.prevent="toggleKbSection('sharedEditable')">
@@ -571,8 +571,8 @@
               && !shared.is_mine
               && !isSharedKbEditable(shared.permission)
               && (index === 0
-                || sortedSpaceKbsList[index - 1].is_mine
-                || isSharedKbEditable(sortedSpaceKbsList[index - 1].permission))" class="kb-section-header"
+                || filteredSpaceKbsList[index - 1].is_mine
+                || isSharedKbEditable(filteredSpaceKbsList[index - 1].permission))" class="kb-section-header"
               role="button" tabindex="0" @click="toggleKbSection('sharedReadonly')"
               @keydown.enter.prevent="toggleKbSection('sharedReadonly')"
               @keydown.space.prevent="toggleKbSection('sharedReadonly')">
@@ -631,8 +631,15 @@
           </template>
         </div>
 
+        <!-- 集合筛选为空：这是当前节点没有匹配项，不应误导用户新建知识库。 -->
+        <div v-if="isCollectionFilterActive && collectionFilteredResultCount === 0 && !loading && !spaceKbsLoading"
+          class="empty-state">
+          <t-icon name="folder-open" size="48px" class="empty-icon" />
+          <span class="empty-txt">{{ $t('knowledgeList.collections.emptyFiltered') }}</span>
+        </div>
+
         <!-- 全部空状态：保留「新建知识库」CTA，因为是空间没有任何 KB 的真空场景 -->
-        <div v-if="spaceSelection === 'all' && filteredKnowledgeBases.length === 0 && !loading" class="empty-state">
+        <div v-if="!isCollectionFilterActive && spaceSelection === 'all' && filteredKnowledgeBases.length === 0 && !loading" class="empty-state">
           <img class="empty-img" src="@/assets/img/upload.svg" alt="">
           <span class="empty-txt">{{ $t('knowledgeList.empty.title') }}</span>
           <span class="empty-desc">{{ $t('knowledgeList.empty.description') }}</span>
@@ -645,7 +652,7 @@
 
         <!-- 收藏空状态：不放创建按钮——「没有收藏」 ≠ 「没有知识库」，
              正确引导是「去星标一下」，不是「再建一个」。 -->
-        <div v-if="spaceSelection === 'favorites' && filteredKnowledgeBases.length === 0 && !loading"
+        <div v-if="!isCollectionFilterActive && spaceSelection === 'favorites' && filteredKnowledgeBases.length === 0 && !loading"
           class="empty-state">
           <t-icon name="star" size="48px" class="empty-icon" />
           <span class="empty-txt">{{ $t('knowledgeList.empty.favoritesTitle') }}</span>
@@ -653,14 +660,14 @@
         </div>
 
         <!-- 最近空状态：同理，引导是「去打开一个」。 -->
-        <div v-if="spaceSelection === 'recents' && filteredKnowledgeBases.length === 0 && !loading" class="empty-state">
+        <div v-if="!isCollectionFilterActive && spaceSelection === 'recents' && filteredKnowledgeBases.length === 0 && !loading" class="empty-state">
           <t-icon name="history" size="48px" class="empty-icon" />
           <span class="empty-txt">{{ $t('knowledgeList.empty.recentsTitle') }}</span>
           <span class="empty-desc">{{ $t('knowledgeList.empty.recentsDescription') }}</span>
         </div>
 
         <!-- 我的知识库空状态 -->
-        <div v-if="spaceSelection === 'mine' && kbs.length === 0 && !loading" class="empty-state">
+        <div v-if="!isCollectionFilterActive && spaceSelection === 'mine' && kbs.length === 0 && !loading" class="empty-state">
           <img class="empty-img" src="@/assets/img/upload.svg" alt="">
           <span class="empty-txt">{{ $t('knowledgeList.empty.title') }}</span>
           <span class="empty-desc">{{ $t('knowledgeList.empty.description') }}</span>
@@ -672,7 +679,7 @@
         </div>
 
         <!-- 空间下知识库空状态 -->
-        <div v-if="spaceSelectionOrgId && !spaceKbsLoading && spaceKbsList.length === 0" class="empty-state">
+        <div v-if="!isCollectionFilterActive && spaceSelectionOrgId && !spaceKbsLoading && spaceKbsList.length === 0" class="empty-state">
           <img class="empty-img" src="@/assets/img/upload.svg" alt="">
           <span class="empty-txt">{{ $t('knowledgeList.empty.sharedTitle') }}</span>
           <span class="empty-desc">{{ $t('knowledgeList.empty.sharedDescription') }}</span>
@@ -800,6 +807,7 @@ import ResourceOriginBadge from '@/components/ResourceOriginBadge.vue'
 import { shouldShowResourceOriginBadge } from '@/utils/card-list-badge'
 import ContextualGuide from '@/components/ContextualGuide.vue'
 import KBCollectionTreePanel from './components/KBCollectionTreePanel.vue'
+import { filterRowsByKnowledgeBaseIDs } from './collectionTree'
 import { isContextualGuideDone, markContextualGuideDone } from '@/config/contextualGuides'
 import { useTenantModelReadiness } from '@/composables/useTenantModelReadiness'
 import { useI18n } from 'vue-i18n'
@@ -918,6 +926,7 @@ const sharedKbsByOrg = computed(() => {
 // 空间视角：该空间内全部知识库（含我共享的），选中空间时请求新接口
 const spaceKbsList = ref<OrganizationSharedKnowledgeBaseItem[]>([])
 const spaceKbsLoading = ref(false)
+const collectionFilterIds = ref<string[] | null>(null)
 
 // 「工作空间」视图下的稳定排序：本空间内「我创建」在前、「同事创建」在后；
 // 子段内保留服务端的置顶优先顺序。给 contributor 视图把「本空间 · 仅查看」
@@ -950,6 +959,9 @@ const sortedMineKbs = computed<KB[]>(() => {
     return bc - ac
   })
 })
+const filteredMineKbs = computed<KB[]>(() =>
+  filterRowsByKnowledgeBaseIDs(sortedMineKbs.value, collectionFilterIds.value)
+)
 
 // 空间视角下的稳定排序：我创建的（is_mine）放在前面，剩下的共享部分再按
 // 可编辑 / 仅查看 排序——这样空间列表跟「全部」视图的视觉顺序一致。
@@ -963,6 +975,13 @@ const sortedSpaceKbsList = computed(() => {
     return aE - bE
   })
 })
+const filteredSpaceKbsList = computed(() =>
+  filterRowsByKnowledgeBaseIDs(
+    sortedSpaceKbsList.value,
+    collectionFilterIds.value,
+    row => row.knowledge_base.id,
+  )
+)
 const spaceCountByOrg = ref<Record<string, number>>({})
 
 // 各空间下的共享知识库数量（用于侧栏展示）：优先用接口返回的该空间总数，否则用「共享给我」数量
@@ -1145,12 +1164,12 @@ const filteredKbSectionCounts = computed<Record<KbSectionKey, number>>(() => {
 })
 const mineKbSectionCounts = computed<Record<KbSectionKey, number>>(() => {
   const c = emptyKbCounts()
-  sortedMineKbs.value.forEach(kb => { c[kbSectionOf(kb)]++ })
+  filteredMineKbs.value.forEach(kb => { c[kbSectionOf(kb)]++ })
   return c
 })
 const spaceKbSectionCounts = computed<Record<KbSectionKey, number>>(() => {
   const c = emptyKbCounts()
-  sortedSpaceKbsList.value.forEach(shared => { c[spaceKbSectionOf(shared)]++ })
+  filteredSpaceKbsList.value.forEach(shared => { c[spaceKbSectionOf(shared)]++ })
   return c
 })
 
@@ -1160,7 +1179,6 @@ const spaceKbSectionCounts = computed<Record<KbSectionKey, number>>(() => {
 // pre-filtered, pre-ordered slices, so the existing kb-card / shared
 // kb-card templates render them with zero extra markup. Order is
 // preserved via the upstream array (pins order is ts-desc).
-const collectionFilterIds = ref<string[] | null>(null)
 const unfilteredKnowledgeBases = computed(() => {
   if (spaceSelection.value === 'favorites') {
     return favoritesList.value
@@ -1189,10 +1207,14 @@ const unfilteredKnowledgeBases = computed(() => {
 })
 
 const filteredKnowledgeBases = computed(() => {
-  const rows = unfilteredKnowledgeBases.value
-  if (collectionFilterIds.value === null) return rows
-  const allowed = new Set(collectionFilterIds.value)
-  return rows.filter((kb: any) => allowed.has(String(kb.id)))
+  return filterRowsByKnowledgeBaseIDs(unfilteredKnowledgeBases.value, collectionFilterIds.value)
+})
+
+const isCollectionFilterActive = computed(() => collectionFilterIds.value !== null)
+const collectionFilteredResultCount = computed(() => {
+  if (spaceSelection.value === 'mine') return filteredMineKbs.value.length
+  if (spaceSelectionOrgId.value) return filteredSpaceKbsList.value.length
+  return filteredKnowledgeBases.value.length
 })
 
 const showKbListEmpty = computed(() => {
