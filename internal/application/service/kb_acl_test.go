@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -28,6 +29,8 @@ func (s *fixedKBShareService) CheckTenantKBPermission(
 type fixedAgentShareService struct {
 	interfaces.AgentShareService
 	agent *types.CustomAgent
+	err   error
+	calls int
 }
 
 type activeTenantMemberService struct{ interfaces.TenantMemberService }
@@ -49,7 +52,8 @@ func (a *captureKBACLAudit) Log(_ context.Context, entry *types.AuditLog) error 
 func (s *fixedAgentShareService) GetSharedAgentForTenant(
 	context.Context, uint64, types.TenantRole, string, ...uint64,
 ) (*types.CustomAgent, error) {
-	return s.agent, nil
+	s.calls++
+	return s.agent, s.err
 }
 
 func TestKBAuthorizerAIUserCannotPreviewDocuments(t *testing.T) {
@@ -282,6 +286,46 @@ func TestKBAuthorizerAgentRequiresConfiguredKBAndCallerAIQuery(t *testing.T) {
 	outside, err := authorizer.Authorize(context.Background(), base)
 	if err != nil || outside.Allowed {
 		t.Fatalf("outside=%+v err=%v", outside, err)
+	}
+}
+
+func TestKBAuthorizerUsesResolvedAgentWithoutSharedLookup(t *testing.T) {
+	shareService := &fixedAgentShareService{err: errors.New("resolved agent must not be looked up as a share")}
+	authorizer := NewKBAuthorizer(nil, nil, nil, shareService)
+
+	for _, test := range []struct {
+		name    string
+		agent   *types.CustomAgent
+		kbID    string
+		allowed bool
+	}{
+		{
+			name: "builtin quick answer may query all workspace knowledge bases",
+			agent: &types.CustomAgent{ID: types.BuiltinQuickAnswerID, IsBuiltin: true, Config: types.CustomAgentConfig{
+				KBSelectionMode: "all",
+			}},
+			kbID: "kb-1", allowed: true,
+		},
+		{
+			name: "same-tenant agent remains limited to configured knowledge bases",
+			agent: &types.CustomAgent{ID: "own-agent", TenantID: 7, Config: types.CustomAgentConfig{
+				KBSelectionMode: "selected", KnowledgeBases: []string{"kb-allowed"},
+			}},
+			kbID: "kb-outside-agent", allowed: false,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			decision, err := authorizer.Authorize(context.Background(), interfaces.KBPolicyRequest{
+				TenantID: 7, KBID: test.kbID, TenantRole: types.TenantRoleOwner,
+				Capability: types.KBCapabilityAIQuery, AgentID: test.agent.ID, Agent: test.agent,
+			})
+			if err != nil || decision.Allowed != test.allowed {
+				t.Fatalf("decision=%+v allowed=%v err=%v", decision, test.allowed, err)
+			}
+		})
+	}
+	if shareService.calls != 0 {
+		t.Fatalf("shared-agent lookup calls=%d want=0", shareService.calls)
 	}
 }
 

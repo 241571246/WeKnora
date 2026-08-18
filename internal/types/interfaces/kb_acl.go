@@ -33,7 +33,11 @@ type KBPolicyRequest struct {
 	Capability     types.KBCapability
 	OrganizationID string
 	AgentID        string
-	APIKeyID       string
+	// Agent is the runtime agent already resolved by the caller. It lets the
+	// authorizer distinguish built-in and same-tenant agents from shares while
+	// applying the same configured-knowledge-base scope check.
+	Agent    *types.CustomAgent
+	APIKeyID string
 }
 
 // KBAuthorizer is the only supported decision point for same-workspace ACL,

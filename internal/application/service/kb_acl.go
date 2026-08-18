@@ -170,12 +170,16 @@ func (a *kbAuthorizer) Authorize(
 	// still falls through to the caller's ordinary authorization below; sharing
 	// an Agent alone cannot make source documents queryable.
 	if request.AgentID != "" && request.Capability == types.KBCapabilityAIQuery {
-		if a.agents == nil {
-			return denied, nil
-		}
-		agent, err := a.agents.GetSharedAgentForTenant(ctx, request.TenantID, request.TenantRole, request.AgentID)
-		if err != nil {
-			return denied, err
+		agent := request.Agent
+		if agent == nil {
+			if a.agents == nil {
+				return denied, nil
+			}
+			var err error
+			agent, err = a.agents.GetSharedAgentForTenant(ctx, request.TenantID, request.TenantRole, request.AgentID)
+			if err != nil {
+				return denied, err
+			}
 		}
 		if agent == nil || !agentAllowsKB(agent, request.KBID) {
 			denied.Reason = "agent_scope_missing"

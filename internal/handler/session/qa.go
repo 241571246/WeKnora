@@ -175,7 +175,7 @@ func (h *Handler) parseQARequest(c *gin.Context, logPrefix string) (*qaRequestCo
 			decision, authErr := h.kbAuthorizer.Authorize(ctx, interfaces.KBPolicyRequest{
 				TenantID: callerTenantID, KBID: kbID, UserID: callerID,
 				TenantRole: types.TenantRoleFromContext(ctx), Capability: types.KBCapabilityAIQuery,
-				AgentID: request.AgentID,
+				AgentID: request.AgentID, Agent: customAgent,
 			})
 			if authErr != nil {
 				types.RecordKBACLError()
@@ -215,7 +215,7 @@ func (h *Handler) parseQARequest(c *gin.Context, logPrefix string) (*qaRequestCo
 			decision, authErr := h.kbAuthorizer.Authorize(ctx, interfaces.KBPolicyRequest{
 				TenantID: callerTenantID, KBID: knowledge.KnowledgeBaseID, UserID: callerID,
 				TenantRole: types.TenantRoleFromContext(ctx), Capability: types.KBCapabilityAIQuery,
-				AgentID: request.AgentID,
+				AgentID: request.AgentID, Agent: customAgent,
 			})
 			if authErr != nil {
 				types.RecordKBACLError()
@@ -508,7 +508,7 @@ func (h *Handler) filterAgentKnowledgeBasesByAIQuery(
 		decision, authErr := h.kbAuthorizer.Authorize(ctx, interfaces.KBPolicyRequest{
 			TenantID: callerTenantID, KBID: kbID, UserID: callerID,
 			TenantRole: types.TenantRoleFromContext(ctx), Capability: types.KBCapabilityAIQuery,
-			AgentID: agentID,
+			AgentID: agentID, Agent: agent,
 		})
 		if authErr != nil {
 			types.RecordKBACLError()
