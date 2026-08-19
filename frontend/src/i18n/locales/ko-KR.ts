@@ -4156,7 +4156,7 @@ export default {
     }
   },
   createChat: {
-    title: '안녕하세요, WeKnora입니다 — 당신의 지식을 손끝에',
+    title: '안녕하세요, 엔터프라이즈 AI 브레인입니다 — 지식으로 모든 의사결정을 이끕니다',
     newSessionTitle: '새 세션',
     messages: {
       createFailed: '세션 생성 실패',

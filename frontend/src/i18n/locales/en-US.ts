@@ -1749,7 +1749,7 @@ export default {
     goToAgentSettings: 'Go to agent settings'
   },
   createChat: {
-    title: 'Hi, I am WeKnora — your knowledge, within reach',
+    title: "Hello, I'm your Enterprise AI Brain — let knowledge drive every decision",
     newSessionTitle: 'New Session',
     messages: {
       createFailed: 'Failed to create session',
