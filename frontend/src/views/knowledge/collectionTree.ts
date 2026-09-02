@@ -22,6 +22,30 @@ export function flattenCollections(collections: KBCollection[]): FlatKBCollectio
   return result
 }
 
+export function flattenVisibleCollections(
+  collections: KBCollection[],
+  expandedCollectionIDs: ReadonlySet<string>,
+): FlatKBCollection[] {
+  const children = new Map<string, KBCollection[]>()
+  for (const item of collections) {
+    const key = item.parent_id || ''
+    children.set(key, [...(children.get(key) || []), item])
+  }
+
+  const result: FlatKBCollection[] = []
+  const seen = new Set<string>()
+  const visit = (parent: string, depth: number) => {
+    for (const item of children.get(parent) || []) {
+      if (seen.has(item.id)) continue
+      seen.add(item.id)
+      result.push({ ...item, depth })
+      if (expandedCollectionIDs.has(item.id)) visit(item.id, depth + 1)
+    }
+  }
+  visit('', 0)
+  return result
+}
+
 export function collectionKnowledgeBaseIDs(
   collectionID: string,
   collections: KBCollection[],

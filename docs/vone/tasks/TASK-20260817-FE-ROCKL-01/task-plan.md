@@ -19,7 +19,7 @@
 - Project ID: PRJ-WEKNORA-VONE
 - Requirement ID: REQ-2026-001
 - Requirement Document: docs/vone/requirements/2026-08-17-KB-RE-知识库树形管理与精细化权限.md
-- Change Document: N/A
+- Change Document: docs/vone/changes/2026-08-21-UI-CH-知识库项目结构左侧树形导航.md
 - Canonical Plan: docs/vone/plans/2026-08-17-KB-PL-知识库权限与树形管理实施计划.md
 - Plan Type: Forecast Implementation Plan
 - Current Plan Version: V1.3
@@ -70,8 +70,8 @@
 
 ## Execution Control
 
-- Current Batch: U1
-- Run Until: U1 exit gate
+- Current Batch: U2
+- Run Until: U2 technical exit gate
 - Verification Cadence: Per WP static / Per Batch targeted / Code Complete integrated / Closure L3
 - State Update Cadence: lightweight checkpoint / batch boundary
 - Pause Only On: unapproved decision / dangerous external write / missing authority or environment / irreducible task blocker / unsafe worktree overlap
@@ -82,6 +82,7 @@
 | Batch | Work Packages | Entry Gate | Exit Gate | Heavy Verification |
 | --- | --- | --- | --- | --- |
 | U1 | B36-B43 | Dependencies satisfied | Task technical exit gate | Per canonical plan |
+| U2 | UI Amendment: left tree navigation | User-approved change baseline | Targeted tests, typecheck, i18n and production build pass | Required |
 
 ## Goal
 
@@ -119,6 +120,14 @@ Owner Skill: `vone-fullstack-change`
 
 - [x] 资源能力投影、AI-only 和集合树 UI 完成（B41-B43）
 
+### M3 — Amendment U2
+
+Owner Skill: `vone-fullstack-change`
+
+- [x] 将顶部横向项目结构改为左侧可折叠树形导航。
+- [x] 保持现有筛选、Owner 操作、接口和 ACL 语义。
+- [x] 完成定向测试、类型检查、i18n、生产构建和模拟数据浏览器验证。
+
 ## Risks
 
 - UI 控件错误会误导用户但不能成为安全边界；后端 Authorizer 保持最终裁决。
@@ -131,7 +140,7 @@ Owner Skill: `vone-fullstack-change`
 
 - Baseline Implementation: Completed and technically verified
 - Governance Recovery: N/A
-- Amendment: N/A
+- Amendment: U2 completed and technically verified — knowledge-base collection navigation layout only; no API, schema or permission change
 - Remaining Closure: immutable scoped commit, B48 independent runtime QA, business acceptance and release authorization
 
 ## Closure Gates

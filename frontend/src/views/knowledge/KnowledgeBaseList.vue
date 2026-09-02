@@ -20,6 +20,7 @@
       </div>
       <div class="kb-list-main">
         <KBCollectionTreePanel :knowledge-bases="kbs" @filter="collectionFilterIds = $event" />
+        <div class="kb-list-results">
         <!-- creator filter intentionally removed from chrome: every card
              already shows its creator via ResourceOriginBadge / avatar, so
              a dedicated horizontal switch added more noise than signal.
@@ -683,6 +684,7 @@
           <img class="empty-img" src="@/assets/img/upload.svg" alt="">
           <span class="empty-txt">{{ $t('knowledgeList.empty.sharedTitle') }}</span>
           <span class="empty-desc">{{ $t('knowledgeList.empty.sharedDescription') }}</span>
+        </div>
         </div>
       </div>
     </div>
@@ -1892,13 +1894,25 @@ const handleUploadFinishedEvent = (event: Event) => {
 .kb-list-main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  overflow: hidden;
+  padding: 0 28px 8px 0;
+}
+
+.kb-list-results {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  // 顶部不留 padding，sticky 的分组标题 (top: 0) 才能贴到容器最顶；
-  // 底部 padding 保留，避免最后一行卡片紧贴边。
-  padding: 0 28px 8px 0;
+  padding-right: 2px;
   scrollbar-width: auto;
   scrollbar-color: auto;
+  container-name: kb-results;
+  container-type: inline-size;
 }
 
 .kb-list-main-loading {
@@ -2256,7 +2270,7 @@ const handleUploadFinishedEvent = (event: Event) => {
   & > * {
     pointer-events: auto;
   }
-  // 下滑时吸顶到滚动容器（.kb-list-main）顶部。z-index 要高于卡片自身的
+  // 下滑时吸顶到滚动容器（.kb-list-results）顶部。z-index 要高于卡片自身的
   // hover 阴影 / 装饰层；背景必须不透明，否则卡片会从下方透出来。
   position: sticky;
   top: 0;
@@ -2852,32 +2866,32 @@ const handleUploadFinishedEvent = (event: Event) => {
   }
 }
 
-// 响应式布局
-@media (min-width: 900px) {
+// 按右侧结果区的真实可用宽度调整卡片列数，避免左侧项目树展开后卡片被挤窄。
+@container kb-results (min-width: 600px) {
   .kb-card-wrap {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (min-width: 1250px) {
+@container kb-results (min-width: 940px) {
   .kb-card-wrap {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-@media (min-width: 1600px) {
+@container kb-results (min-width: 1280px) {
   .kb-card-wrap {
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
-@media (min-width: 1900px) {
+@container kb-results (min-width: 1620px) {
   .kb-card-wrap {
     grid-template-columns: repeat(5, 1fr);
   }
 }
 
-@media (min-width: 2200px) {
+@container kb-results (min-width: 1960px) {
   .kb-card-wrap {
     grid-template-columns: repeat(6, 1fr);
   }

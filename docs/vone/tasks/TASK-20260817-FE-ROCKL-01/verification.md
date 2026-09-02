@@ -14,7 +14,7 @@
 
 ## Last Updated
 
-- 2026-08-18 01:05
+- 2026-08-21 14:41
 
 ## Current Task
 
@@ -26,8 +26,8 @@
 
 ## Execution Batch
 
-- Batch ID: U1 (B36-B43)
-- Exit Gate: Task Technical exit gate
+- Batch ID: U2 (left-side collection-tree UI amendment; U1 evidence retained)
+- Exit Gate: U2 Task Technical exit gate
 - Gate Result: PASS
 - Reverify Scope: Only task-related changes or defects
 
@@ -37,7 +37,7 @@
 
 ## Baseline
 
-- 9524f7310b8d5636307afc6365966ab513c19a1f + uncommitted scoped VONE-0.7.2.1 candidate diff
+- 63b8c616 + uncommitted scoped U2 candidate diff; unrelated `frontend/package-lock.json` excluded
 
 ## Verification Mode
 
@@ -62,8 +62,8 @@
 ## Verification Scope
 
 - Scope Type: Task-related
-- Changed Modules / Files: `frontend/src/views/knowledge`; `frontend/src/components/doc-content.vue`; KB API and four locale bundles
-- Why this level is enough now: 成员管理、共同 Owner 确认、17 能力投影、AI-only 内容隔离、三类删除和集合树交互已完成。
+- Changed Modules / Files: `KBCollectionTreePanel.vue`, `KnowledgeBaseList.vue`, `collectionTree.ts`, `collectionTree.test.ts`; no backend/API/schema/locale-bundle change in U2
+- Why this level is enough now: U2 is a reversible frontend-only presentation amendment and has targeted, full-suite, type, i18n, build and production-preview browser evidence.
 
 ## Verification Checklist
 
@@ -78,6 +78,8 @@
 - `go test ./...`
 - targeted `go test -race` for ACL/owner/Agent/route paths
 - `npm run type-check`; `npm test`; `npm run check-i18n`; `npm run build-only`
+- `npm test -- src/views/knowledge/collectionTree.test.ts`
+- Playwright CLI production preview at 1440×900 and 1024×768 with in-session read-only API fixtures
 - VONE SQLite/PostgreSQL migration rehearsals and release-package validators as applicable
 
 ## Log Paths
@@ -90,8 +92,9 @@
 
 ### Passed
 
-- typecheck PASS; 347/347 frontend tests PASS; i18n 11/11 PASS; Vite production build 6353 modules PASS
-- 成员管理、共同 Owner 确认、17 能力投影、AI-only 内容隔离、三类删除和集合树交互已完成。
+- Full frontend tests 353/353 PASS; targeted collection-tree tests 9/9 PASS; typecheck PASS; i18n 11/11 PASS; Vite production build 6354 modules PASS.
+- Production-preview browser smoke PASS at 1440×900 and 1024×768: tree hierarchy/counts, project filter, branch collapse, compact panel and responsive card layout behaved as designed; final browser console reported 0 errors.
+- Browser smoke found and corrected an invalid i18n namespace before the final build (`kbAcl.folderTree.*` → existing `knowledgeBase.folderTree.*`).
 
 ### Task-related Failures
 
@@ -103,7 +106,7 @@
 
 ### Pending / Not Run
 
-- Independent browser/API runtime verification is owned by TASK-20260817-QA-ROCKL-01.
+- Real-account and real-backend browser/API runtime verification is owned by TASK-20260817-QA-ROCKL-01; the production-preview smoke used read-only mocked API data and is not independent QA.
 
 ## Final Result
 
@@ -117,4 +120,4 @@ Final Result and Technical Verification Gate apply only to the declared Completi
 
 ## Gaps / User Validation
 
-- No Task Technical gap; release-level runtime and human gates remain.
+- No Task Technical gap. Real-account runtime, non-Owner visibility, Owner mutation paths, business acceptance and release authorization remain external gates.

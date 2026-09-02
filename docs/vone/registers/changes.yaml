@@ -1,2 +1,27 @@
 schemaVersion: 1
-changes: []
+changes:
+  - id: CHG-2026-001
+    requirementId: REQ-2026-001
+    requestedAt: "2026-08-21T14:15:00+08:00"
+    changeType: UI Behavior
+    baselineImpact: In-scope presentation amendment; no requirement capability change
+    releaseImpact: Included in VONE-0.7.2.1 frontend candidate
+    approvalStatus: Approved
+    approver: ROCKL
+    approvedAt: "2026-08-21T14:15:00+08:00"
+    document: changes/2026-08-21-UI-CH-知识库项目结构左侧树形导航.md
+    taskIds:
+      - TASK-20260817-FE-ROCKL-01
+    status: Pending QA
+  - id: CHG-2026-002
+    requirementId: REQ-2026-001
+    requestedAt: "2026-08-21T14:49:24+08:00"
+    changeType: Scope Expansion / Full-stack Capability
+    baselineImpact: Proposed expansion of the explicit non-scope for persistent empty knowledge-base document folders
+    releaseImpact: Unassigned; no target release or implementation commitment before evaluation and approval
+    approvalStatus: Pending Evaluation
+    approver: N/A
+    approvedAt: N/A
+    document: changes/2026-08-21-FS-CH-知识库内部目录手动配置.md
+    taskIds: []
+    status: Draft

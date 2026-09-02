@@ -5,7 +5,7 @@ status: Active
 sourceOfTruth: Docs
 externalLink: N/A
 timezone: Asia/Singapore
-updatedAt: "2026-08-18T11:34:46+08:00"
+updatedAt: "2026-08-21T14:49:24+08:00"
 targetRelease: VONE-0.7.2.1
 owners:
   project: ROCKL
@@ -17,7 +17,7 @@ owners:
 taskSource:
   type: Team Task Directories
   location: tasks
-  lastReconciledAt: "2026-08-18T11:34:46+08:00"
+  lastReconciledAt: "2026-08-21T14:15:00+08:00"
 assurance:
   modelVersion: 2
   deliveryModel: Concentrated Team

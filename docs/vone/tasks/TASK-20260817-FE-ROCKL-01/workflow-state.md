@@ -44,7 +44,7 @@
 - Project ID: PRJ-WEKNORA-VONE
 - Requirement ID: REQ-2026-001
 - Requirement Document: docs/vone/requirements/2026-08-17-KB-RE-知识库树形管理与精细化权限.md
-- Change Document: N/A
+- Change Document: docs/vone/changes/2026-08-21-UI-CH-知识库项目结构左侧树形导航.md
 - Canonical Plan: docs/vone/plans/2026-08-17-KB-PL-知识库权限与树形管理实施计划.md
 - Target Release: VONE-0.7.2.1
 - Implementation Admission: PASS
@@ -68,15 +68,15 @@
 
 ## Current Stage
 
-- Task Technical Verified / Immutable Commit Pending
+- U2 Amendment Technical Verified / Independent QA Pending
 
 ## Previous Stage
 
-- Planned / Waiting for Frozen API Contract
+- U2 Amendment Implementation
 
 ## Next Recommended Stage
 
-- Independent Browser QA
+- Independent browser/API QA in TASK-20260817-QA-ROCKL-01
 
 ## Status
 
@@ -84,9 +84,9 @@
 
 ## Execution Control
 
-- Current Batch: U1 (B36-B43)
+- Current Batch: U2
 - Batch Status: Completed
-- Run Until: Task Technical exit gate reached
+- Run Until: U2 technical exit gate
 - Verification Cadence: Per WP static / Per Batch targeted / Code Complete integrated / Closure L3
 - State Update Cadence: lightweight checkpoint / batch boundary
 - Pause Only On: unapproved decision / dangerous external write / missing authority or environment / irreducible task blocker / unsafe worktree overlap
@@ -94,17 +94,21 @@
 
 ## Last Updated
 
-- 2026-08-18 01:05
+- 2026-08-21 14:41
 
 ## Recovery Point
 
-- B36-B43 are technically complete. Resume only for independent runtime QA or a task-related defect.
+- U1 and U2 are technically verified. Preserve the existing `frontend/package-lock.json` user change; resume at independent real-account QA without changing API, ACL or schema contracts.
 
 ## Completed Skills
 
 - [x] vone-workflow-orchestrator
 - [x] vone-fullstack-change
 - [x] vone-verify-before-done
+- [x] vone-change-request
+- [x] vone-vue-admin-ui-builder
+- [x] vone-fullstack-change (U2)
+- [x] vone-verify-before-done (U2)
 
 ## Blockers
 

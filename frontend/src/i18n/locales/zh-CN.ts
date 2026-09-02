@@ -4156,7 +4156,7 @@ export default {
     }
   },
   createChat: {
-    title: '你好，我是企业AI大脑，让知识驱动每一次决策',
+    title: '你好，我是AI大脑，让知识驱动每一次决策',
     newSessionTitle: '新会话',
     messages: {
       createFailed: '创建会话失败',

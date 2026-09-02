@@ -1,6 +1,6 @@
 <template>
   <main class="vone-auth-shell">
-    <section class="vone-auth-story" aria-label="Enterprise AI Brain Platform">
+    <section class="vone-auth-story" aria-label="AI Brain Platform">
       <div class="vone-auth-story__glow vone-auth-story__glow--top" />
       <div class="vone-auth-story__glow vone-auth-story__glow--bottom" />
 
@@ -222,7 +222,7 @@ const copy = computed(() => isChinese.value ? {
   searchPlaceholder: '搜索知识、文档、问题或答案…',
   loginTitle: '欢迎登录',
   loginSubtitle: '连接知识、检索答案，构建可信的企业智能',
-  registerSubtitle: '创建账户并开始使用企业AI大脑平台',
+  registerSubtitle: '创建账户并开始使用AI大脑平台',
   noAccount: '还没有账户？',
   themeLabel: '界面主题',
 } : {
@@ -231,8 +231,8 @@ const copy = computed(() => isChinese.value ? {
   searchPlaceholder: 'Search knowledge, documents, questions or answers…',
   loginTitle: 'Welcome back',
   loginSubtitle: 'Connect knowledge and build trusted enterprise intelligence.',
-  registerSubtitle: 'Create an account and start using Enterprise AI Brain Platform.',
-  noAccount: 'New to Enterprise AI Brain Platform?',
+  registerSubtitle: 'Create an account and start using AI Brain Platform.',
+  noAccount: 'New to AI Brain Platform?',
   themeLabel: 'Interface theme',
 });
 

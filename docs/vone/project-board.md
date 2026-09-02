@@ -8,13 +8,13 @@
 - Health: 有风险（AT_RISK）
 - Current Gate: 项目交付
 - Target Release: VONE-0.7.2.1
-- Updated At: 2026-08-18T11:36:10+08:00
+- Updated At: 2026-08-21T14:54:09+08:00
 
 ## 项目健康摘要（Project Health Summary）
 
 | 活动事项（Active Items） | 阻塞事项（Blocked Items） | 逾期事项（Overdue Items） | 待测试（Pending QA） | 待业务验收（Pending Acceptance） | 当前目标版本（Target Release） |
 |---|---|---|---|---|---|
-| 2 | 0 | 0 | 1 | 0 | VONE-0.7.2.1 |
+| 2 | 0 | 2 | 1 | 0 | VONE-0.7.2.1 |
 
 | 草稿（Draft） | 已就绪（Ready） | 已规划（Planned） | 进行中（In Progress） | 待测试（Pending QA） | 测试通过（QA Passed/Verified） | 已发布（Released） | 已关闭（Closed） |
 |---|---|---|---|---|---|---|---|
@@ -61,6 +61,8 @@
 
 | 变更编号（Change ID） | 关联需求（Requirement ID） | 提出时间（Requested At） | 变更类型（Change Type） | 基线影响（Baseline Impact） | 发布影响（Release Impact） | 审批状态（Approval Status） | 审批人（Approver） | 实施任务（Task IDs） | 状态（Status） |
 |---|---|---|---|---|---|---|---|---|---|
+| CHG-2026-001 | REQ-2026-001 | 2026-08-21T14:15:00+08:00 | UI Behavior | In-scope presentation amendment; no requirement capability change | Included in VONE-0.7.2.1 frontend candidate | 已批准 | ROCKL | TASK-20260817-FE-ROCKL-01 | 待 QA |
+| CHG-2026-002 | REQ-2026-001 | 2026-08-21T14:49:24+08:00 | Scope Expansion / Full-stack Capability | Proposed expansion of the explicit non-scope for persistent empty knowledge-base document folders | Unassigned; no target release or implementation commitment before evaluation and approval | Pending Evaluation | 不适用 | 无 | 草稿 |
 
 ## 交付效率与返工摘要（Delivery and Rework Summary）
 
@@ -103,14 +105,14 @@
 
 | 指标名称（Metric） | 当前值（Current Value） | 上期值（Previous Value） | 趋势（Trend） | 统计窗口（Window） | 口径版本（Definition Version） | 数据时间（As of） |
 |---|---|---|---|---|---|---|
-| 缺陷逃逸率（Defect Escape Rate） | 待定 | 待定 | → | 最近3个已结束版本 | V1 | 2026-08-18 |
-| 测试驳回率（QA Rejection Rate） | 待定 | 待定 | → | 最近3个已结束版本 | V1 | 2026-08-18 |
-| 平均闭环时长（Average Closure Time） | 待定 | 待定 | → | 最近30天 | V1 | 2026-08-18 |
-| 一次通过率（First Pass Rate） | 待定 | 待定 | → | 试点完成事项 | V1 | 2026-08-18 |
-| 需求侧返工占比（Requirement-side Rework Share） | 待定 | 待定 | → | 试点返工事件 | V1 | 2026-08-18 |
-| 估算偏差（Estimation Variance） | 待定 | 待定 | → | 按复杂度分组 | V1 | 2026-08-18 |
-| 逾期行动数（Overdue Action Count） | 0 | 待定 | → | 当前态 | V1 | 2026-08-18 |
-| 逾期里程碑数（Overdue Milestone Count） | 0 | 待定 | → | 当前态 | V1 | 2026-08-18 |
+| 缺陷逃逸率（Defect Escape Rate） | 待定 | 待定 | → | 最近3个已结束版本 | V1 | 2026-08-21 |
+| 测试驳回率（QA Rejection Rate） | 待定 | 待定 | → | 最近3个已结束版本 | V1 | 2026-08-21 |
+| 平均闭环时长（Average Closure Time） | 待定 | 待定 | → | 最近30天 | V1 | 2026-08-21 |
+| 一次通过率（First Pass Rate） | 待定 | 待定 | → | 试点完成事项 | V1 | 2026-08-21 |
+| 需求侧返工占比（Requirement-side Rework Share） | 待定 | 待定 | → | 试点返工事件 | V1 | 2026-08-21 |
+| 估算偏差（Estimation Variance） | 待定 | 待定 | → | 按复杂度分组 | V1 | 2026-08-21 |
+| 逾期行动数（Overdue Action Count） | 2 | 待定 | → | 当前态 | V1 | 2026-08-21 |
+| 逾期里程碑数（Overdue Milestone Count） | 0 | 待定 | → | 当前态 | V1 | 2026-08-21 |
 
 ## 项目章程（Project Charter）
 
@@ -130,7 +132,7 @@
 - Board Contract Version: 3.2
 - Task Source Type: Team Task 目录
 - Task Source Location: tasks
-- Task Last Reconciled At: 2026-08-18T11:34:46+08:00
+- Task Last Reconciled At: 2026-08-21T14:15:00+08:00
 - Assurance Model Version: 2
 - Delivery Model: 集中式团队
 - Verification Mode: 混合验证
@@ -150,4 +152,4 @@
 - QA Independence Exception Approver: Tim / T001 (BUG-2026-001 scoped exception approved; no release-wide exception granted)
 - Owner Assignment Gate: 通过（PASS）
 - QA Independence Gate: 需要例外审批
-- Updated At: 2026-08-18T11:36:10+08:00
+- Updated At: 2026-08-21T14:54:09+08:00

@@ -10,8 +10,8 @@ export const brandProfile: BrandProfile =
 export const voneBrand = {
   id: 'vone',
   version: '0.1.0',
-  productNameZh: '企业AI大脑平台',
-  productNameEn: 'Enterprise AI Brain Platform',
+  productNameZh: 'AI大脑平台',
+  productNameEn: 'AI Brain Platform',
   shortName: 'VONE',
   copyright: '@vonechina 2026',
   upstreamAttribution: 'Powered by Tencent WeKnora',

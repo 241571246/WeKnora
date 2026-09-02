@@ -4,6 +4,7 @@ import {
   collectionKnowledgeBaseIDs,
   filterRowsByKnowledgeBaseIDs,
   flattenCollections,
+  flattenVisibleCollections,
   unclassifiedKnowledgeBaseIDs,
 } from './collectionTree'
 
@@ -18,6 +19,25 @@ const bindings = [
 
 test('flattens nested collections with depth', () => {
   assert.deepEqual(flattenCollections(collections).map(item => [item.id, item.depth]), [['root', 0], ['child', 1]])
+})
+
+test('visible tree hides descendants of collapsed collections', () => {
+  assert.deepEqual(
+    flattenVisibleCollections(collections, new Set()).map(item => [item.id, item.depth]),
+    [['root', 0]],
+  )
+})
+
+test('visible tree expands only the selected branches', () => {
+  const rows = [
+    ...collections,
+    { id: 'sibling', tenant_id: 1, name: 'Sibling', sort_order: 1 },
+    { id: 'sibling-child', tenant_id: 1, parent_id: 'sibling', name: 'Sibling Child', sort_order: 0 },
+  ]
+  assert.deepEqual(
+    flattenVisibleCollections(rows, new Set(['root'])).map(item => [item.id, item.depth]),
+    [['root', 0], ['child', 1], ['sibling', 0]],
+  )
 })
 
 test('parent selection includes descendant knowledge bases', () => {
