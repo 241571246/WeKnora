@@ -22,6 +22,7 @@ import { diffWikiLines, type WikiDiffLine } from '@/utils/wikiLineDiff';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth';
 import DocumentPreview from '@/components/document-preview.vue';
+import DocumentFileIcon from '@/views/knowledge/components/DocumentFileIcon.vue';
 import KnowledgeProcessingTimeline from '@/components/knowledge-processing-timeline.vue';
 import { resolveKnowledgeDownloadFileName } from '@/views/knowledge/knowledgeDownloadFileName';
 import { isKnownPreviewableExt, resolveFilePreviewExt } from '@/utils/filePreview';
@@ -196,15 +197,11 @@ const detailTags = computed(() => {
   return Array.isArray(tags) ? tags : [];
 });
 
-const headerIconName = computed(() => {
-  switch (props.details?.type) {
-    case 'url':
-      return 'link';
-    case 'manual':
-      return 'edit';
-    default:
-      return 'file';
-  }
+const headerIconFileName = computed(() => {
+  const detail = props.details;
+  return detail?.file_type
+    ? `document.${detail.file_type.toLowerCase()}`
+    : detail?.original_file_name || detail?.file_name || detail?.title || '';
 });
 
 const showSummarySection = computed(() =>
@@ -975,6 +972,7 @@ const channelLabelMap: Record<string, string> = {
   wecom: 'knowledgeBase.channelWecom',
   feishu: 'knowledgeBase.channelFeishu',
   gitlab: 'knowledgeBase.channelGitLab',
+  confluence: 'knowledgeBase.channelConfluence',
   // Drive (云盘) connectors get their own channel so Drive docs show
   // "飞书云盘" / "Lark 云盘", distinct from the wiki connector's "飞书".
   feishu_drive: 'knowledgeBase.channelFeishuDrive',
@@ -1606,7 +1604,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
       <template #header>
         <div class="doc-drawer-header">
           <div class="doc-drawer-header-icon">
-            <t-icon :name="headerIconName" />
+            <DocumentFileIcon :source-type="details.type" :file-name="headerIconFileName" />
           </div>
           <div class="doc-drawer-header-text">
             <div class="doc-drawer-header-title">{{ getDisplayTitle() }}</div>
@@ -2007,6 +2005,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
                                     </t-tooltip>
                                     <t-popconfirm v-if="canDeleteGeneratedQuestion && !question.id.startsWith('legacy-')"
                                       theme="warning" :content="$t('knowledgeBase.confirmDeleteQuestion')"
+                                      :confirm-btn="{ content: $t('common.delete'), theme: 'danger' }"
                                       @confirm="handleDeleteQuestion(chunk.original, index, question)">
                                       <t-button class="icon-action-btn delete-question-btn" theme="default" variant="text"
                                         shape="square" size="small" :loading="isDeleting(index, question.id)">
@@ -2213,7 +2212,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   height: 28px;
   padding: 0;
   color: var(--td-text-color-secondary);
-  border-radius: 4px;
+  border-radius: var(--app-radius-xs);
 
   &:hover,
   &.is-active {
@@ -2233,7 +2232,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 :deep(.code-block-wrapper) {
   margin: 12px 0;
   border: 1px solid var(--td-component-border);
-  border-radius: 6px;
+  border-radius: var(--app-radius-sm);
   background: var(--td-bg-color-container);
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -2244,7 +2243,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
     padding: 8px 12px;
     background: var(--td-bg-color-secondarycontainer);
     border-bottom: 1px solid var(--td-component-stroke);
-    font-size: 12px;
+    font-size: var(--app-text-sm);
     font-weight: 600;
     color: var(--td-text-color-primary);
   }
@@ -2254,7 +2253,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
     padding: 12px;
     background: var(--td-bg-color-secondarycontainer);
     overflow: auto;
-    font-size: 13px;
+    font-size: var(--app-text-md);
     line-height: 1.5;
 
     code {
@@ -2284,14 +2283,10 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 .doc-drawer-header-icon {
   flex-shrink: 0;
   width: 32px;
-  height: 32px;
-  border-radius: 9px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(7, 192, 95, 0.1);
-  color: var(--td-brand-color);
-  font-size: 16px;
 }
 
 .doc-drawer-header-text {
@@ -2300,7 +2295,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 }
 
 .doc-drawer-header-title {
-  font-size: 15px;
+  font-size: var(--app-text-lg);
   font-weight: 600;
   line-height: 1.4;
   color: var(--td-text-color-primary);
@@ -2333,7 +2328,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 }
 
 .doc-drawer-body .setting-drawer__section-title {
-  font-size: 13px;
+  font-size: var(--app-text-md);
   font-weight: 600;
   color: var(--td-text-color-primary);
   margin: 0 0 4px;
@@ -2367,7 +2362,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 
 .doc-detail-label {
   flex: 0 0 72px;
-  font-size: 12px;
+  font-size: var(--app-text-sm);
   color: var(--td-text-color-secondary);
 }
 
@@ -2378,7 +2373,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--app-text-md);
   color: var(--td-text-color-primary);
   word-break: break-word;
 }
@@ -2396,7 +2391,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 
 .metadata-count {
   color: var(--td-text-color-placeholder);
-  font-size: 11px;
+  font-size: var(--app-text-xs);
   font-weight: 400;
 }
 
@@ -2418,7 +2413,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 .summary-refreshing-indicator {
   gap: 5px;
   color: var(--td-text-color-placeholder);
-  font-size: 11px;
+  font-size: var(--app-text-xs);
   white-space: nowrap;
 }
 
@@ -2446,7 +2441,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 
 .metadata-item-key {
   color: var(--td-text-color-placeholder);
-  font-size: 12px;
+  font-size: var(--app-text-sm);
 
   &::after {
     content: ':';
@@ -2455,7 +2450,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 
 .metadata-item-value {
   color: var(--td-text-color-primary);
-  font-size: 13px;
+  font-size: var(--app-text-md);
 }
 
 .metadata-empty-action,
@@ -2468,12 +2463,12 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   min-height: 28px;
   padding: 0 4px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--app-radius-xs);
   color: var(--td-text-color-secondary);
   background: transparent;
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--app-text-sm);
 
   &:hover {
     color: var(--td-brand-color);
@@ -2513,7 +2508,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   border-radius: 3px;
   color: var(--td-text-color-placeholder);
   background: var(--td-bg-color-component-disabled);
-  font-size: 13px;
+  font-size: var(--app-text-md);
   line-height: 30px;
 }
 
@@ -2573,8 +2568,8 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   padding: 0;
   flex-shrink: 0;
   color: var(--td-text-color-secondary);
-  border-radius: 4px;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  border-radius: var(--app-radius-xs);
+  transition: background-color var(--app-motion-fast) ease, color var(--app-motion-fast) ease;
 
   &:hover {
     background: var(--td-bg-color-container-hover);
@@ -2623,7 +2618,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   position: relative;
   background: var(--td-bg-color-container);
   border: 1px solid var(--td-component-border);
-  border-radius: 6px;
+  border-radius: var(--app-radius-sm);
 
   &.summary_clickable {
     cursor: pointer;
@@ -2650,7 +2645,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 .summary_content {
   padding: 12px;
   color: var(--td-text-color-primary);
-  font-size: 13px;
+  font-size: var(--app-text-md);
   line-height: 1.5;
   word-break: break-word;
   white-space: pre-wrap;
@@ -2691,14 +2686,14 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   min-height: 42px;
   background: var(--td-bg-color-container);
   border: 1px dashed var(--td-component-border);
-  border-radius: 6px;
+  border-radius: var(--app-radius-sm);
   color: var(--td-text-color-placeholder);
-  font-size: 13px;
+  font-size: var(--app-text-md);
 }
 
 // URL链接区域
 .url_link_box {
-  border-radius: 4px;
+  border-radius: var(--app-radius-xs);
   background: var(--td-bg-color-container-hover);
   padding: 8px 12px;
 
@@ -2711,7 +2706,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 
     .url_text {
       flex: 1;
-      font-size: 13px;
+      font-size: var(--app-text-md);
       word-break: break-all;
     }
 
@@ -2733,7 +2728,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   max-width: 140px;
   height: 20px;
   line-height: 20px;
-  border-radius: 999px;
+  border-radius: var(--app-radius-pill);
   border-color: var(--td-component-stroke);
   color: var(--td-text-color-secondary);
   padding: 0 8px;
@@ -2746,16 +2741,16 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
     text-overflow: ellipsis;
     white-space: nowrap;
     vertical-align: middle;
-    font-size: 11px;
+    font-size: var(--app-text-xs);
   }
 }
 
 .chunk-count {
   color: var(--td-text-color-secondary);
-  font-size: 12px;
+  font-size: var(--app-text-sm);
   background: var(--td-bg-color-container-hover);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--app-radius-xs);
   flex-shrink: 0;
 }
 
@@ -2773,7 +2768,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 .no_content {
   margin-top: 12px;
   color: var(--td-text-color-disabled);
-  font-size: 13px;
+  font-size: var(--app-text-md);
   padding: 16px;
   text-align: center;
 }
@@ -2786,7 +2781,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 }
 
 .chunk-item {
-  border-radius: 6px;
+  border-radius: var(--app-radius-sm);
   padding: 12px 14px;
   background: var(--td-bg-color-container);
   border: 1px solid var(--td-component-border);
@@ -2817,7 +2812,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 
   .chunk-index {
     color: var(--td-text-color-secondary);
-    font-size: 12px;
+    font-size: var(--app-text-sm);
     font-weight: 600;
   }
 
@@ -2830,7 +2825,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 
   .chunk-meta {
     color: var(--td-text-color-placeholder);
-    font-size: 11px;
+    font-size: var(--app-text-xs);
   }
 }
 
@@ -2854,7 +2849,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   gap: 6px;
   margin-bottom: 8px;
   color: var(--td-text-color-secondary);
-  font-size: 12px;
+  font-size: var(--app-text-sm);
   font-weight: 500;
 }
 
@@ -2862,7 +2857,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   width: min(560px, calc(100vw - 32px));
   max-height: min(620px, calc(100vh - 96px));
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--app-radius-sm);
   background: var(--td-bg-color-container);
 }
 
@@ -2880,14 +2875,14 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   align-items: center;
   gap: 6px;
   color: var(--td-text-color-primary);
-  font-size: 13px;
+  font-size: var(--app-text-md);
   font-weight: 600;
 }
 
 .chunk-history-current {
   margin-top: 2px;
   color: var(--td-text-color-placeholder);
-  font-size: 11px;
+  font-size: var(--app-text-xs);
 }
 
 .chunk-history-popup-state {
@@ -2897,7 +2892,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   gap: 8px;
   min-height: 100px;
   color: var(--td-text-color-placeholder);
-  font-size: 12px;
+  font-size: var(--app-text-sm);
 }
 
 .chunk-history-popup-list {
@@ -2939,13 +2934,13 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 .chunk-history-version {
   min-width: 32px;
   color: var(--td-text-color-primary);
-  font-size: 12px;
+  font-size: var(--app-text-sm);
   font-weight: 600;
 }
 
 .chunk-history-time {
   color: var(--td-text-color-placeholder);
-  font-size: 11px;
+  font-size: var(--app-text-xs);
 }
 
 .chunk-history-status-change {
@@ -2954,7 +2949,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   gap: 4px;
   margin-left: auto;
   color: var(--td-text-color-secondary);
-  font-size: 11px;
+  font-size: var(--app-text-xs);
 }
 
 .chunk-history-row-chevron {
@@ -2977,7 +2972,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   gap: 10px;
   min-height: 30px;
   color: var(--td-text-color-placeholder);
-  font-size: 11px;
+  font-size: var(--app-text-xs);
 }
 
 .chunk-history-diff-legend {
@@ -2987,7 +2982,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   margin: 0;
   flex-shrink: 0;
   color: var(--td-text-color-placeholder);
-  font-size: 10px;
+  font-size: var(--app-text-2xs);
 }
 
 .chunk-history-diff-legend-item {
@@ -3012,11 +3007,11 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 
 .chunk-history-no-diff {
   padding: 12px;
-  border-radius: 4px;
+  border-radius: var(--app-radius-xs);
   color: var(--td-text-color-placeholder);
   background: var(--td-bg-color-container);
   text-align: center;
-  font-size: 12px;
+  font-size: var(--app-text-sm);
 }
 
 .chunk-history-diff-body {
@@ -3025,10 +3020,10 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   padding: 8px 0;
   overflow: auto;
   border: 1px solid var(--td-component-border);
-  border-radius: 4px;
+  border-radius: var(--app-radius-xs);
   background: var(--td-bg-color-container);
   font-family: var(--app-font-family-mono);
-  font-size: 11px;
+  font-size: var(--app-text-xs);
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
@@ -3063,7 +3058,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   width: min(520px, calc(100vw - 32px));
   max-height: min(560px, calc(100vh - 96px));
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--app-radius-sm);
   background: var(--td-bg-color-container);
 }
 
@@ -3085,19 +3080,19 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
 .chunk-popup-title {
   gap: 7px;
   color: var(--td-text-color-primary);
-  font-size: 13px;
+  font-size: var(--app-text-md);
   font-weight: 600;
 }
 
 .chunk-popup-count {
   color: var(--td-text-color-placeholder);
-  font-size: 11px;
+  font-size: var(--app-text-xs);
   font-weight: 400;
 }
 
 .chunk-question-stale-hint {
   color: var(--td-warning-color);
-  font-size: 11px;
+  font-size: var(--app-text-xs);
   font-weight: 400;
 }
 
@@ -3110,7 +3105,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   gap: 8px;
   min-height: 120px;
   color: var(--td-text-color-placeholder);
-  font-size: 12px;
+  font-size: var(--app-text-sm);
 }
 
 .chunk-context-popup-body {
@@ -3118,7 +3113,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   padding: 14px 16px;
   overflow: auto;
   color: var(--td-text-color-secondary);
-  font-size: 13px;
+  font-size: var(--app-text-md);
 }
 
 .chunk-questions-popup-body {
@@ -3145,9 +3140,9 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   min-height: 34px;
   padding: 5px 6px;
   border-bottom: 1px solid var(--td-component-stroke);
-  border-radius: 4px;
+  border-radius: var(--app-radius-xs);
   background: transparent;
-  font-size: 13px;
+  font-size: var(--app-text-md);
   color: var(--td-text-color-primary);
   line-height: 20px;
 
@@ -3190,7 +3185,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   align-items: center;
   gap: 2px;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity var(--app-motion-fast) ease;
 
   &:focus-within {
     opacity: 1;
@@ -3212,7 +3207,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   gap: 8px;
   padding: 20px 8px 12px;
   color: var(--td-text-color-placeholder);
-  font-size: 12px;
+  font-size: var(--app-text-sm);
 }
 
 .question-composer {
@@ -3230,7 +3225,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   margin-bottom: 16px;
   padding: 12px 16px;
   background: var(--td-bg-color-container-hover);
-  border-radius: 6px;
+  border-radius: var(--app-radius-sm);
   border: 1px solid var(--td-component-border);
 
   .audio-player {
@@ -3243,7 +3238,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
     align-items: center;
     gap: 8px;
     color: var(--td-text-color-placeholder);
-    font-size: 13px;
+    font-size: var(--app-text-md);
     padding: 4px 0;
   }
 }
@@ -3303,7 +3298,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   border-radius: 1px;
   background: var(--td-component-border);
   opacity: 0.55;
-  transition: opacity 0.15s ease, background 0.15s ease;
+  transition: opacity var(--app-motion-fast) ease, background var(--app-motion-fast) ease;
 }
 
 .doc-drawer-resize-handle:hover .doc-drawer-resize-line {
@@ -3337,7 +3332,7 @@ const handleChunkPageChange = (pageInfo: { current: number }) => {
   border-radius: 1px;
   background: var(--td-component-border);
   opacity: 0.55;
-  transition: opacity 0.15s ease, background 0.15s ease;
+  transition: opacity var(--app-motion-fast) ease, background var(--app-motion-fast) ease;
 }
 
 .trace-drawer-resize-handle:hover .trace-drawer-resize-line {

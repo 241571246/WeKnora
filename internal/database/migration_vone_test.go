@@ -32,6 +32,7 @@ func TestVONESQLiteMigrationBackfillPreservesSharesAndRollsBack(t *testing.T) {
 	baseSQL := `
 CREATE TABLE tenant_members (id INTEGER PRIMARY KEY, tenant_id INTEGER, user_id TEXT, role TEXT, status TEXT, joined_at DATETIME, deleted_at DATETIME);
 CREATE TABLE knowledge_bases (id TEXT PRIMARY KEY, tenant_id INTEGER, creator_id TEXT, deleted_at DATETIME);
+CREATE TABLE users (id TEXT PRIMARY KEY);
 CREATE TABLE kb_shares (id INTEGER PRIMARY KEY, knowledge_base_id TEXT);
 INSERT INTO tenant_members VALUES (1, 7, 'owner-1', 'owner', 'active', '2026-01-01', NULL);
 INSERT INTO tenant_members VALUES (2, 7, 'creator-1', 'viewer', 'active', '2026-01-02', NULL);
@@ -48,7 +49,7 @@ INSERT INTO kb_shares VALUES (1, 'kb-valid');`
 	if err := RunVONEMigrationsWithOptions("", MigrationOptions{SQLiteDBPath: dbPath}); err != nil {
 		t.Fatal(err)
 	}
-	if version, dirty, ok := CachedVONEMigrationVersion(); !ok || dirty || version != 1 {
+	if version, dirty, ok := CachedVONEMigrationVersion(); !ok || dirty || version != 2 {
 		t.Fatalf("cached VONE migration state version=%d dirty=%v ok=%v", version, dirty, ok)
 	}
 	db, err = sql.Open("sqlite3", dbPath)
@@ -57,6 +58,9 @@ INSERT INTO kb_shares VALUES (1, 'kb-valid');`
 	}
 	defer db.Close()
 	var count int
+	if _, err := db.Exec("SELECT 1 FROM external_auth_identities LIMIT 1"); err != nil {
+		t.Fatalf("external auth identities missing after VONE migration: %v", err)
+	}
 	if err := db.QueryRow("SELECT COUNT(*) FROM vone_kb_memberships").Scan(&count); err != nil || count != 2 {
 		t.Fatalf("membership count=%d err=%v", count, err)
 	}

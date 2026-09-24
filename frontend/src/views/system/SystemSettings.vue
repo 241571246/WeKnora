@@ -130,7 +130,8 @@
             </div>
           </div>
 
-          <div v-if="activeSettingsSection === 'access'" class="setting-row setting-row--password-reset">
+          <!-- Keep the reset request and its submit lock alive across tab changes. -->
+          <div v-show="activeSettingsSection === 'access'" class="setting-row setting-row--password-reset">
             <div class="setting-info">
               <div class="setting-label">
                 <span>{{ t('system.globalSettings.passwordReset.label') }}</span>
@@ -141,59 +142,13 @@
               <p class="desc">{{ t('system.globalSettings.passwordReset.description') }}</p>
             </div>
             <div class="setting-control">
-              <t-popup :visible="passwordResetVisible" trigger="click" placement="left-top" destroy-on-close
-                overlay-class-name="system-admin-action-popup-overlay" @visible-change="onPasswordResetVisibleChange">
-                <span class="system-admin-action-popup-anchor">
-                  <t-button theme="danger" variant="text" class="password-reset-trigger">
-                    <template #icon><t-icon name="lock-on" /></template>
-                    {{ t('system.globalSettings.passwordReset.action') }}
-                  </t-button>
-                </span>
-                <template #content>
-                  <div class="system-admin-action-popup-inner" @click.stop>
-                    <div class="system-admin-action-popup-title">
-                      {{ t('system.globalSettings.passwordReset.dialogTitle') }}
-                    </div>
-                    <p class="system-admin-action-popup-hint">
-                      {{ t('system.globalSettings.passwordReset.warning') }}
-                    </p>
-                    <t-form ref="passwordResetFormRef" :data="passwordResetForm" :rules="passwordResetRules"
-                      label-align="top" class="system-admin-action-popup-form">
-                      <t-form-item :label="t('system.globalSettings.passwordReset.emailLabel')" name="email">
-                        <t-input v-model="passwordResetForm.email" type="text" clearable autocomplete="off"
-                          :disabled="passwordResetSubmitting"
-                          :placeholder="t('system.globalSettings.passwordReset.emailPlaceholder')" />
-                      </t-form-item>
-                      <t-form-item :label="t('system.globalSettings.passwordReset.newPasswordLabel')"
-                        name="newPassword">
-                        <t-input v-model="passwordResetForm.newPassword" type="password" autocomplete="new-password"
-                          :disabled="passwordResetSubmitting"
-                          :placeholder="t('system.globalSettings.passwordReset.newPasswordPlaceholder')">
-                          <template #prefix-icon><t-icon name="lock-on" /></template>
-                        </t-input>
-                      </t-form-item>
-                      <t-form-item :label="t('system.globalSettings.passwordReset.confirmPasswordLabel')"
-                        name="confirmPassword">
-                        <t-input v-model="passwordResetForm.confirmPassword" type="password" autocomplete="new-password"
-                          :disabled="passwordResetSubmitting"
-                          :placeholder="t('system.globalSettings.passwordReset.confirmPasswordPlaceholder')"
-                          @enter="submitPasswordReset">
-                          <template #prefix-icon><t-icon name="lock-on" /></template>
-                        </t-input>
-                      </t-form-item>
-                    </t-form>
-                    <div class="system-admin-action-popup-footer">
-                      <t-button variant="outline" :disabled="passwordResetSubmitting"
-                        @click="passwordResetVisible = false">
-                        {{ t('system.globalSettings.confirm.cancelBtn') }}
-                      </t-button>
-                      <t-button theme="danger" :loading="passwordResetSubmitting" @click="submitPasswordReset">
-                        {{ t('system.globalSettings.passwordReset.confirmBtn') }}
-                      </t-button>
-                    </div>
-                  </div>
-                </template>
-              </t-popup>
+              <ResetPasswordDialog v-model:visible="passwordResetVisible" :active="activeSettingsSection === 'access'"
+                @announced="saveAnnouncement = $event">
+                <t-button theme="danger" variant="text" class="password-reset-trigger">
+                  <template #icon><t-icon name="lock-on" /></template>
+                  {{ t('system.globalSettings.passwordReset.action') }}
+                </t-button>
+              </ResetPasswordDialog>
             </div>
           </div>
 
@@ -373,7 +328,6 @@
 import { ref, reactive, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { MessagePlugin } from 'tdesign-vue-next'
-import type { FormInstanceFunctions, FormRule } from 'tdesign-vue-next'
 import {
   listSystemSettings,
   updateSystemSetting,
@@ -382,14 +336,13 @@ import {
   listSystemAdmins,
   promoteUserToSystemAdmin,
   revokeSystemAdmin,
-  resetUserPassword,
   type SystemSettingItem,
 } from '@/api/system'
-import { getAuthConfig } from '@/api/auth'
 import CreateUserDialog from './CreateUserDialog.vue'
+import ResetPasswordDialog from './ResetPasswordDialog.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useDeploymentCapabilitiesStore } from '@/stores/deploymentCapabilities'
-import { newPasswordRules, PASSWORD_SPECIAL_CHARS } from '@/utils/passwordPolicy'
+import { PASSWORD_SPECIAL_CHARS } from '@/utils/passwordPolicy'
 import { isSettingValueDirty, resolveCurrentSetting } from './systemSettingsEdit'
 
 const authStore = useAuthStore()
@@ -604,87 +557,10 @@ const adminEmails = ref<string[]>([])
 const adminEmailToId = ref<Record<string, string>>({})
 const adminBusy = ref(false)
 
+// Access-row popups each live in their own dialog component
+// (CreateUserDialog.vue / ResetPasswordDialog.vue, same Access row);
+// only their visibility is owned here.
 const passwordResetVisible = ref(false)
-const passwordResetSubmitting = ref(false)
-const passwordResetFormRef = ref<FormInstanceFunctions>()
-const passwordResetForm = reactive({
-  email: '',
-  newPassword: '',
-  confirmPassword: '',
-})
-const passwordResetRules = computed(() => ({
-  email: [
-    { required: true, message: t('auth.emailRequired'), type: 'error' },
-    { email: true, message: t('auth.emailInvalid'), type: 'error' }
-  ],
-  newPassword: newPasswordRules(t, complexPasswordEnabled.value),
-  confirmPassword: [
-    { required: true, message: t('auth.confirmPasswordRequired'), trigger: 'blur' },
-    {
-      validator: (value: string) => value === passwordResetForm.newPassword,
-      message: t('auth.passwordMismatch'),
-      trigger: 'blur',
-    },
-  ],
-}))
-
-const complexPasswordEnabled = ref(false)
-
-const loadAuthConfig = async () => {
-  try {
-    const resp = await getAuthConfig()
-    complexPasswordEnabled.value = !!resp.complex_password_enabled
-  } catch (err: any) {
-    const msg = err?.message || t('system.globalSettings.messages.loadFailed')
-    MessagePlugin.error(msg)
-    complexPasswordEnabled.value = false
-  }
-}
-
-function resetPasswordResetForm() {
-  passwordResetForm.email = ''
-  passwordResetForm.newPassword = ''
-  passwordResetForm.confirmPassword = ''
-  passwordResetFormRef.value?.clearValidate?.()
-}
-
-async function onPasswordResetVisibleChange(visible: boolean) {
-  if (!visible && passwordResetSubmitting.value) return
-  passwordResetVisible.value = visible
-  if (visible) {
-    await loadAuthConfig()
-    resetPasswordResetForm()
-    await nextTick()
-    passwordResetFormRef.value?.clearValidate?.()
-    return
-  }
-  resetPasswordResetForm()
-}
-
-async function submitPasswordReset() {
-  if (passwordResetSubmitting.value) return
-  passwordResetSubmitting.value = true
-  try {
-    const valid = await passwordResetFormRef.value?.validate?.()
-    if (valid !== true) return
-    await resetUserPassword({
-      email: passwordResetForm.email.trim(),
-      new_password: passwordResetForm.newPassword,
-    })
-    saveAnnouncement.value = t('system.globalSettings.passwordReset.success')
-    MessagePlugin.success(t('system.globalSettings.passwordReset.success'))
-    passwordResetVisible.value = false
-  } catch (err: any) {
-    const msg = err?.message || t('system.globalSettings.passwordReset.failed')
-    saveAnnouncement.value = msg
-    MessagePlugin.error(msg)
-  } finally {
-    passwordResetSubmitting.value = false
-  }
-}
-
-// Create-user popup lives in CreateUserDialog.vue (same Access row);
-// only its visibility is owned here.
 const createUserVisible = ref(false)
 
 // Guards ssrf.whitelist while an async confirm roundtrip is in flight.
@@ -1240,26 +1116,14 @@ onUnmounted(() => {
 </script>
 
 <style lang="less" scoped>
+@import (reference) '@/components/css/settings-section.less';
+
 .system-settings {
   width: 100%;
 }
 
 .section-header {
-  margin-bottom: 24px;
-
-  h2 {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--td-text-color-primary);
-    margin: 0;
-  }
-
-  .section-description {
-    font-size: 14px;
-    color: var(--td-text-color-secondary);
-    margin: 8px 0 0;
-    line-height: 1.5;
-  }
+  .settings-section-header();
 }
 
 .section-header__titlewrap {
@@ -1274,7 +1138,7 @@ onUnmounted(() => {
   justify-content: center;
   padding: 2px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--app-radius-xs);
   background: transparent;
   color: var(--td-text-color-placeholder);
   cursor: help;
@@ -1295,14 +1159,14 @@ onUnmounted(() => {
 .hint-popover__title {
   margin: 0;
   color: var(--td-text-color-primary);
-  font-size: 13px;
+  font-size: var(--app-text-md);
   font-weight: 600;
 }
 
 .hint-popover__list {
   margin: 0;
   padding: 0 0 0 18px;
-  font-size: 12px;
+  font-size: var(--app-text-sm);
   line-height: 1.6;
   color: var(--td-text-color-secondary);
   list-style: disc;
@@ -1339,7 +1203,7 @@ onUnmounted(() => {
 
   p {
     margin: 0;
-    font-size: 13px;
+    font-size: var(--app-text-md);
     line-height: 1.5;
     color: var(--td-text-color-secondary);
   }
@@ -1354,7 +1218,7 @@ onUnmounted(() => {
   grid-template-columns: minmax(0, 1fr) 280px;
   gap: 24px;
   padding: 10px 16px;
-  font-size: 12px;
+  font-size: var(--app-text-sm);
   font-weight: 500;
   color: var(--td-text-color-secondary);
   background: var(--td-bg-color-secondarycontainer);
@@ -1385,12 +1249,12 @@ onUnmounted(() => {
   }
 
   .setting-label {
-    font-size: 14px;
+    font-size: var(--app-text-base);
   }
 
   .desc {
     max-width: 620px;
-    font-size: 12px;
+    font-size: var(--app-text-sm);
   }
 
   .setting-control {
@@ -1420,7 +1284,7 @@ onUnmounted(() => {
   gap: 5px;
   flex-shrink: 0;
   min-width: 52px;
-  font-size: 12px;
+  font-size: var(--app-text-sm);
   color: var(--td-text-color-secondary);
 }
 
@@ -1451,7 +1315,7 @@ onUnmounted(() => {
   gap: 8px;
   padding: 60px 0;
   color: var(--td-text-color-placeholder);
-  font-size: 13px;
+  font-size: var(--app-text-md);
 }
 
 // Skeleton mirrors GeneralSettings.vue 1:1 so the two panes feel like
@@ -1468,21 +1332,11 @@ onUnmounted(() => {
 }
 
 .setting-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 20px 0;
-  border-bottom: 1px solid var(--td-component-stroke);
-
-  &:last-child {
-    border-bottom: none;
-  }
+  .setting-row();
 }
 
 .setting-info {
-  flex: 1;
-  max-width: 65%;
-  padding-right: 24px;
+  .setting-info();
 }
 
 .setting-label {
@@ -1490,7 +1344,7 @@ onUnmounted(() => {
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  font-size: 15px;
+  font-size: var(--app-text-lg);
   font-weight: 500;
   color: var(--td-text-color-primary);
   margin-bottom: 4px;
@@ -1502,7 +1356,7 @@ onUnmounted(() => {
 }
 
 .desc {
-  font-size: 13px;
+  font-size: var(--app-text-md);
   color: var(--td-text-color-secondary);
   margin: 0;
   line-height: 1.5;
@@ -1511,14 +1365,12 @@ onUnmounted(() => {
 
 .setting-meta {
   margin-top: 6px;
-  font-size: 12px;
+  font-size: var(--app-text-sm);
   color: var(--td-text-color-placeholder);
 }
 
 .setting-control {
-  flex-shrink: 0;
-  min-width: 280px;
-  display: flex;
+  .setting-control();
   flex-direction: column;
   align-items: flex-end;
   gap: 6px;
@@ -1558,7 +1410,7 @@ onUnmounted(() => {
   height: 32px;
   padding: 0 12px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--app-radius-sm);
 }
 
 .password-reset-trigger {
@@ -1588,7 +1440,7 @@ onUnmounted(() => {
   }
 
   .settings-group--runtime {
-    border-radius: 8px;
+    border-radius: var(--app-radius-md);
 
     .setting-row {
       display: flex;
@@ -1637,8 +1489,4 @@ onUnmounted(() => {
     max-width: none;
   }
 }
-</style>
-
-<style lang="less">
-@import './systemAdminDialog.less';
 </style>

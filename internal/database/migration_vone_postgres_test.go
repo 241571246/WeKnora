@@ -73,7 +73,7 @@ INSERT INTO kb_shares (id, knowledge_base_id, organization_id, shared_by_user_id
 	if err := db.QueryRow("SELECT COUNT(*) FROM kb_shares WHERE id = 'share-0000000-0000-0000-0000-0000001'").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("kb_shares preserved count=%d err=%v", count, err)
 	}
-	if err := db.QueryRow("SELECT COUNT(*) FROM vone_schema_migrations WHERE version = 1 AND dirty = false").Scan(&count); err != nil || count != 1 {
+	if err := db.QueryRow("SELECT COUNT(*) FROM vone_schema_migrations WHERE version = 2 AND dirty = false").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("VONE migration ledger count=%d err=%v", count, err)
 	}
 

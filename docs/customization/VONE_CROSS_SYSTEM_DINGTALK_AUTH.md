@@ -49,7 +49,7 @@ WEKNORA_DINGTALK_AUTH_DEFAULT_TENANT_ROLE=viewer
 建议顺序：
 
 1. 备份数据库并演练 migration。
-2. 应用 `000092_external_auth_identities`（SQLite 为 `000014`）。
+2. 上游迁移完成后运行 VONE 独立迁移轨道中的 `000002_external_auth_identities`（PostgreSQL / SQLite 各一份）；不要占用上游迁移编号。
 3. 发布 WeKnora 后端，再发布 WeKnora 前端。
 4. 配置 WeKnora 独立钉钉应用并用测试账号验证浏览器授权、钉钉内免登和本地权限。
 5. PMS 前端独立发布并验证外链。
