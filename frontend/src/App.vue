@@ -131,25 +131,32 @@ const handleGlobalOIDCCallback = async () => {
   const oidcError = params.get('oidc_error')
   const oidcErrorDescription = params.get('oidc_error_description')
   const oidcResult = params.get('oidc_result')
+  const dingtalkError = params.get('dingtalk_error')
+  const dingtalkErrorDescription = params.get('dingtalk_error_description')
+  const dingtalkResult = params.get('dingtalk_result')
 
-  if (!oidcError && !oidcResult) return
+  if (!oidcError && !oidcResult && !dingtalkError && !dingtalkResult) return
 
-  if (oidcError) {
+  if (oidcError || dingtalkError) {
     clearOIDCCallbackState('/login')
     await router.replace('/login')
-    MessagePlugin.error(oidcErrorDescription || 'OIDC login failed')
+    MessagePlugin.error(
+      oidcErrorDescription || dingtalkErrorDescription ||
+      (dingtalkError ? 'DingTalk login failed' : 'OIDC login failed'),
+    )
     return
   }
 
   try {
-    if (!oidcResult) {
+    const encodedResult = oidcResult || dingtalkResult
+    if (!encodedResult) {
       clearOIDCCallbackState('/login')
       await router.replace('/login')
-      MessagePlugin.error('OIDC login failed')
+      MessagePlugin.error(dingtalkResult ? 'DingTalk login failed' : 'OIDC login failed')
       return
     }
 
-    const response = decodeOIDCResult(oidcResult)
+    const response = decodeOIDCResult(encodedResult)
     if (response.success) {
       clearOIDCCallbackState('/')
       await persistOIDCLoginResponse(response)
@@ -159,13 +166,13 @@ const handleGlobalOIDCCallback = async () => {
 
     clearOIDCCallbackState('/login')
     await router.replace('/login')
-    MessagePlugin.error(response.message || 'OIDC login failed')
+    MessagePlugin.error(response.message || (dingtalkResult ? 'DingTalk login failed' : 'OIDC login failed'))
   } catch (error: any) {
-    console.error('Global OIDC callback handling failed:', error)
+    console.error('Global federated-login callback handling failed:', error)
     authStore.logout()
     clearOIDCCallbackState('/login')
     await router.replace('/login')
-    MessagePlugin.error(error.message || 'OIDC login failed')
+    MessagePlugin.error(error.message || (dingtalkResult ? 'DingTalk login failed' : 'OIDC login failed'))
   }
 }
 

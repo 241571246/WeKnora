@@ -7,6 +7,7 @@ import type { DeploymentCapabilityKey } from '@/config/deploymentCapabilities'
 import { MessagePlugin } from 'tdesign-vue-next'
 import i18n from '@/i18n'
 import { normalizeSettingsSection } from '@/config/settingsRoute'
+import { hasPendingFederatedCallback } from './federatedCallback'
 
 /** Lite /桌面 WebView 硬刷新时可能只打开 `/`，用 session 记住上次页面以便恢复 */
 const LITE_LAST_PATH_KEY = 'weknora_lite_last_path'
@@ -37,10 +38,9 @@ function isSafeLiteRestoreTarget(path: string) {
   return path.startsWith('/platform/') && !path.startsWith('/platform/organizations')
 }
 
-function hasPendingOIDCCallback() {
+function hasPendingFederatedCallbackInLocation() {
   if (typeof window === 'undefined') return false
-  const hash = window.location.hash || ''
-  return hash.includes('oidc_result=') || hash.includes('oidc_error=')
+  return hasPendingFederatedCallback(window.location.hash)
 }
 
 const router = createRouter({
@@ -309,9 +309,9 @@ let liteDeepLinkRestoreDone = false
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  // OIDC 回跳登录结果依赖 App.vue 在挂载后消费 URL hash。
+  // 联合登录回跳结果依赖 App.vue 在挂载后消费 URL hash。
   // 如果这里先按“未登录”拦截到 /login，会导致回调结果没有机会落盘。
-  if (hasPendingOIDCCallback()) {
+  if (hasPendingFederatedCallbackInLocation()) {
     next()
     return
   }

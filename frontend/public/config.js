@@ -6,4 +6,6 @@ window.__RUNTIME_CONFIG__ = {
   EMBED_BASE_URL: '',
   // Optional: default UI locale for first-time visitors (zh-CN | en-US | ru-RU | ko-KR)
   DEFAULT_LOCALE: '',
+  // Optional cross-system navigation target. No authentication data is appended.
+  PMS_URL: '',
 };

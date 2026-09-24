@@ -6,6 +6,14 @@ case "${DEFAULT_LOCALE:-}" in
   zh-CN|en-US|ru-RU|ko-KR) RUNTIME_DEFAULT_LOCALE="${DEFAULT_LOCALE}" ;;
 esac
 
+# Only allow an absolute http(s) destination, then escape it for a JS string.
+RUNTIME_PMS_URL=""
+case "${PMS_URL:-}" in
+  http://*|https://*)
+    RUNTIME_PMS_URL=$(printf '%s' "$PMS_URL" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    ;;
+esac
+
 # 生成运行时配置文件，注入环境变量到前端
 FILE_MB=${MAX_FILE_SIZE_MB:-50}
 SKILL_MB=${MAX_SKILL_BUNDLE_SIZE_MB:-256}
@@ -20,7 +28,8 @@ cat > /usr/share/nginx/html/config.js << EOF
 window.__RUNTIME_CONFIG__ = {
   MAX_FILE_SIZE_MB: ${FILE_MB},
   MAX_SKILL_BUNDLE_SIZE_MB: ${SKILL_MB},
-  DEFAULT_LOCALE: "${RUNTIME_DEFAULT_LOCALE}"
+  DEFAULT_LOCALE: "${RUNTIME_DEFAULT_LOCALE}",
+  PMS_URL: "${RUNTIME_PMS_URL}"
 };
 EOF
 

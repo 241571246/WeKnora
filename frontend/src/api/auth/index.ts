@@ -68,6 +68,15 @@ export interface OIDCConfigResponse {
   message?: string
 }
 
+export interface DingTalkConfigResponse {
+  success: boolean
+  enabled: boolean
+  corp_id?: string
+  client_id?: string
+  inside_login: boolean
+  message?: string
+}
+
 // 用户注册接口
 export interface RegisterRequest {
   username: string
@@ -246,6 +255,32 @@ export async function getOIDCConfig(): Promise<OIDCConfigResponse> {
       success: false,
       enabled: false,
       message: error.message || t('error.auth.loginFailed')
+    }
+  }
+}
+
+export async function getDingTalkConfig(): Promise<DingTalkConfigResponse> {
+  try {
+    const response = await get('/api/v1/auth/dingtalk/config')
+    return response as unknown as DingTalkConfigResponse
+  } catch (error: any) {
+    return {
+      success: false,
+      enabled: false,
+      inside_login: false,
+      message: error.message || t('auth.dingtalkLoginFailed')
+    }
+  }
+}
+
+export async function loginWithDingTalkInsideCode(authCode: string): Promise<LoginResponse> {
+  try {
+    const response = await post('/api/v1/auth/dingtalk/inside', { auth_code: authCode })
+    return response as unknown as LoginResponse
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message || t('auth.dingtalkLoginFailed')
     }
   }
 }

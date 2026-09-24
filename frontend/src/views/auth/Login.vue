@@ -3,9 +3,11 @@
     :registration-enabled="registrationEnabled" :invite-lookup="inviteLookup"
     :invite-lookup-error="inviteLookupError" :loading="loading" :oidc-enabled="oidcEnabled"
     :oidc-loading="oidcLoading" :oidc-login-text="oidcLoginText" :show-language-menu="showLanguageMenu"
+    :dingtalk-enabled="dingtalkEnabled" :dingtalk-loading="dingtalkLoading"
     :language-options="languageOptions" :current-language="currentLanguage" :current-lang-option="currentLangOption"
     :form-data="formData" :register-data="registerData" :form-rules="formRules" :register-rules="registerRules"
-    @login="handleLogin" @register="handleRegister" @oidc-login="handleOIDCLogin" @toggle-mode="toggleMode"
+    @login="handleLogin" @register="handleRegister" @oidc-login="handleOIDCLogin"
+    @dingtalk-login="handleDingTalkLogin" @toggle-mode="toggleMode"
     @toggle-language="toggleLanguageMenu" @select-language="selectLanguage" />
   <div v-else class="login-layout">
     <div class="animated-bg">
@@ -233,13 +235,18 @@
                 </t-button>
               </div>
 
-              <div v-if="oidcEnabled" class="oidc-divider">
+              <div v-if="oidcEnabled || dingtalkEnabled" class="oidc-divider">
                 <span>{{ $t('auth.orContinueWith') }}</span>
               </div>
 
               <t-button v-if="oidcEnabled" theme="default" size="large" block :loading="oidcLoading" :disabled="loading"
                 class="oidc-button" @click="handleOIDCLogin">
                 {{ oidcLoading ? $t('auth.redirectingToOIDC') : oidcLoginText }}
+              </t-button>
+
+              <t-button v-if="dingtalkEnabled" theme="default" size="large" block :loading="dingtalkLoading"
+                :disabled="loading || oidcLoading" class="oidc-button" @click="handleDingTalkLogin">
+                {{ dingtalkLoading ? $t('auth.redirectingToDingTalk') : $t('auth.dingtalkLogin') }}
               </t-button>
             </t-form>
 
@@ -363,6 +370,8 @@ import {
   register,
   getOIDCAuthorizationURL,
   getOIDCConfig,
+  getDingTalkConfig,
+  loginWithDingTalkInsideCode,
   autoSetup,
   getAuthConfig,
   userInfoFromApi,
@@ -422,10 +431,14 @@ const voneLoginRef = ref()
 // State management
 const loading = ref(false)
 const oidcLoading = ref(false)
+const dingtalkLoading = ref(false)
 const isRegisterMode = ref(false)
 const showLanguageMenu = ref(false)
 const oidcEnabled = ref(false)
 const oidcProviderName = ref('')
+const dingtalkEnabled = ref(false)
+const dingtalkCorpID = ref('')
+const dingtalkClientID = ref('')
 // registrationEnabled defaults to true so that on first paint the Register
 // link is visible; the actual mode is fetched from /auth/config in onMounted.
 // In invite_only mode the link/card are hidden.
@@ -621,6 +634,21 @@ const loadOIDCConfig = async () => {
   }
 }
 
+const loadDingTalkConfig = async () => {
+  try {
+    const response = await getDingTalkConfig()
+    dingtalkEnabled.value = !!response.success && !!response.enabled
+    dingtalkCorpID.value = response.corp_id || ''
+    dingtalkClientID.value = response.client_id || ''
+  } catch {
+    dingtalkEnabled.value = false
+    dingtalkCorpID.value = ''
+    dingtalkClientID.value = ''
+  }
+}
+
+const loadFederatedAuthConfigs = () => Promise.all([loadOIDCConfig(), loadDingTalkConfig()])
+
 // loadAuthConfig fetches /auth/config and caches whether self-service
 // registration is allowed. Failures fall back to "enabled" so a transient
 // network glitch doesn't lock new users out of an open deployment.
@@ -656,6 +684,55 @@ const handleOIDCLogin = async () => {
     MessagePlugin.error(error.message || t('auth.oidcLoginFailed'))
   } finally {
     oidcLoading.value = false
+  }
+}
+
+const requestDingTalkInsideCode = async (): Promise<string | null> => {
+  const bridge = (window as any).dd
+  if (!bridge) return null
+  if (typeof bridge.requestAuthCode === 'function') {
+    return new Promise((resolve, reject) => bridge.requestAuthCode({
+      clientId: dingtalkClientID.value,
+      corpId: dingtalkCorpID.value,
+      success: (result: any) => resolve(result?.code || null),
+      fail: reject,
+    }))
+  }
+  const requestAuthCode = bridge.runtime?.permission?.requestAuthCode
+  if (typeof requestAuthCode !== 'function') return null
+  return new Promise((resolve, reject) => requestAuthCode({
+    corpId: dingtalkCorpID.value,
+    onSuccess: (result: any) => resolve(result?.code || null),
+    onFail: reject,
+  }))
+}
+
+const handleDingTalkLogin = async () => {
+  if (!dingtalkEnabled.value) return
+  dingtalkLoading.value = true
+  try {
+    if (inviteToken.value) {
+      sessionStorage.setItem('weknora_pending_invite_token', inviteToken.value)
+    }
+    const insideCode = /DingTalk/i.test(navigator.userAgent)
+      ? await requestDingTalkInsideCode()
+      : null
+    if (insideCode) {
+      const response = await loginWithDingTalkInsideCode(insideCode)
+      if (!response.success || !response.token) {
+        MessagePlugin.error(response.message || t('auth.dingtalkLoginFailed'))
+        return
+      }
+      await persistLoginResponse(response)
+      notifyLoginSuccess(response, t, tm, formatRole, roleIcon)
+      return
+    }
+    window.location.assign('/api/v1/auth/dingtalk/start')
+  } catch (error: any) {
+    console.error('DingTalk login failed:', error)
+    MessagePlugin.error(error.message || t('auth.dingtalkLoginFailed'))
+  } finally {
+    dingtalkLoading.value = false
   }
 }
 
@@ -794,13 +871,13 @@ onMounted(async () => {
         inviteLookup.value = resp.data
       } else {
         inviteLookupError.value = resp.message || t('inviteRegister.invalidBody')
-        loadOIDCConfig()
+        loadFederatedAuthConfigs()
         loadAuthConfig()
         return
       }
     } catch {
       inviteLookupError.value = t('inviteRegister.invalidBody')
-      loadOIDCConfig()
+      loadFederatedAuthConfigs()
       loadAuthConfig()
       return
     } finally {
@@ -818,7 +895,7 @@ onMounted(async () => {
     const inviteOnly = cfg.registration_mode === 'invite_only'
     registrationEnabled.value = !inviteOnly
     isRegisterMode.value = !inviteOnly
-    loadOIDCConfig()
+    loadFederatedAuthConfigs()
     return
   }
 
@@ -843,7 +920,7 @@ onMounted(async () => {
     }
   }
 
-  loadOIDCConfig()
+  loadFederatedAuthConfigs()
   loadAuthConfig()
 })
 </script>

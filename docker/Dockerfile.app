@@ -2,6 +2,7 @@
 FROM golang:1.26-bookworm AS builder
 
 WORKDIR /app
+RUN echo "precedence ::ffff:0:0/96 100" >> /etc/gai.conf
 
 # 通过构建参数接收敏感信息
 ARG GOPRIVATE_ARG
@@ -55,7 +56,20 @@ ENV PATH=/usr/local/cargo/bin:$PATH
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     if [ "$WITH_ANYDOC" = "1" ]; then \
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+        mkdir -p /usr/local/cargo && \
+        printf '%s\n' \
+            '[source.crates-io]' \
+            'replace-with = "rsproxy-sparse"' \
+            '' \
+            '[source.rsproxy-sparse]' \
+            'registry = "sparse+https://rsproxy.cn/index/"' \
+            '' \
+            '[net]' \
+            'git-fetch-with-cli = true' \
+            > /usr/local/cargo/config.toml && \
+        export RUSTUP_DIST_SERVER=https://rsproxy.cn RUSTUP_UPDATE_ROOT=https://rsproxy.cn/rustup && \
+        ( curl -4 --retry 8 --retry-delay 3 --retry-all-errors --proto '=https' --tlsv1.2 -sSf https://rsproxy.cn/rustup-init.sh \
+          || curl -4 --retry 8 --retry-delay 3 --retry-all-errors --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs ) \
             | sh -s -- -y --profile minimal --default-toolchain stable && \
         ./scripts/build-anydoc-lib.sh; \
     fi

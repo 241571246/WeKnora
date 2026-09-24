@@ -103,6 +103,13 @@
               <span class="enterprise-icon">▥</span>
               {{ oidcLoading ? $t('auth.redirectingToOIDC') : oidcLoginText }}
             </t-button>
+
+            <t-button v-if="dingtalkEnabled" theme="default" variant="outline" size="large" block
+              :loading="dingtalkLoading" :disabled="loading || oidcLoading" class="secondary-action"
+              @click="$emit('dingtalk-login')">
+              <span class="dingtalk-icon">钉</span>
+              {{ dingtalkLoading ? $t('auth.redirectingToDingTalk') : $t('auth.dingtalkLogin') }}
+            </t-button>
           </t-form>
 
           <div v-if="registrationEnabled" class="auth-mode-link">
@@ -191,6 +198,8 @@ const props = defineProps<{
   oidcEnabled: boolean;
   oidcLoading: boolean;
   oidcLoginText: string;
+  dingtalkEnabled: boolean;
+  dingtalkLoading: boolean;
   showLanguageMenu: boolean;
   languageOptions: LanguageOption[];
   currentLanguage: string;
@@ -205,6 +214,7 @@ defineEmits<{
   (event: 'login'): void;
   (event: 'register'): void;
   (event: 'oidc-login'): void;
+  (event: 'dingtalk-login'): void;
   (event: 'toggle-mode'): void;
   (event: 'toggle-language'): void;
   (event: 'select-language', language: string): void;
@@ -491,6 +501,7 @@ defineExpose({ validateLogin, validateRegister });
 .primary-action { height: 54px; margin-top: 4px; border-radius: 9px; font-size: 16px; font-weight: 700; }
 .secondary-action { height: 52px; margin-top: 14px; border-color: var(--vone-border-strong); border-radius: 9px; color: var(--td-brand-color); font-weight: 600; }
 .enterprise-icon { margin-right: 8px; }
+.dingtalk-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 6px; background: #1677ff; color: #fff; font-size: 12px; font-weight: 700; }
 
 .auth-mode-link { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 24px; color: var(--vone-text-secondary); }
 .auth-mode-link button { border: 0; background: transparent; color: var(--td-brand-color); cursor: pointer; font: inherit; font-weight: 600; }

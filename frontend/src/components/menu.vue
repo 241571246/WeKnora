@@ -2,10 +2,7 @@
     <div class="aside_box" :class="{ 'aside_box--collapsed': uiStore.sidebarCollapsed }">
         <!-- 展开时：Logo + 搜索/折叠按钮同行 -->
         <div class="logo_row" v-if="!uiStore.sidebarCollapsed">
-            <div class="logo_box" @click="router.push('/platform/knowledge-bases')" style="cursor: pointer;">
-                <BrandIdentity size="compact" :show-english="false" />
-                <sup v-if="isLiteEdition" class="lite-badge">Lite</sup>
-            </div>
+            <SystemSwitcher :target-url="pmsUrl" :lite-edition="isLiteEdition" />
             <div class="logo_actions">
                 <t-tooltip placement="bottom">
                     <template #content>
@@ -48,6 +45,8 @@
                 </div>
             </div>
         </t-tooltip>
+
+        <SystemSwitcher v-if="uiStore.sidebarCollapsed" :target-url="pmsUrl" compact />
 
         <!-- 空间选择器：仅在用户可切换空间时显示 -->
         <TenantSelector v-if="canAccessAllTenants && !uiStore.sidebarCollapsed" />
@@ -256,9 +255,10 @@ import { useCommandPaletteStore } from '@/stores/commandPalette';
 import { MessagePlugin, DialogPlugin, Icon as TIcon } from "tdesign-vue-next";
 import UserMenu from '@/components/UserMenu.vue';
 import TenantSelector from '@/components/TenantSelector.vue';
-import BrandIdentity from '@/customizations/vone/components/BrandIdentity.vue';
+import SystemSwitcher from '@/customizations/vone/components/SystemSwitcher.vue';
 import { useI18n } from 'vue-i18n';
 import { getSystemInfo } from '@/api/system';
+import { configuredPMSUrl } from '@/utils/externalSystemUrl';
 
 const chatResources = useChatResourcesStore();
 // Platform logos reused from IMChannelsOverviewPanel — keeps the session list
@@ -297,6 +297,7 @@ const deploymentCapabilities = useDeploymentCapabilitiesStore();
 const orgStore = useOrganizationStore();
 const uiStore = useUIStore();
 const commandPaletteStore = useCommandPaletteStore();
+const pmsUrl = configuredPMSUrl();
 
 // Platform-aware label for the ⌘K hint. navigator.platform is deprecated but
 // the alternatives (userAgentData.platform) aren't universally available yet;
@@ -1272,34 +1273,6 @@ const onDragHandleMouseDown = (e: MouseEvent) => {
 
         &:hover {
             background: var(--td-brand-color-light);
-        }
-    }
-
-    .logo_box {
-        display: flex;
-        align-items: center;
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-
-        :deep(.vone-brand-identity) {
-            min-width: 0;
-        }
-
-        :deep(.vone-brand-identity__names) {
-            min-width: 0;
-            max-width: 116px;
-        }
-
-        .lite-badge {
-            margin-left: 2px;
-            align-self: flex-start;
-            margin-top: 2px;
-            font-size: 9px;
-            font-weight: 600;
-            color: var(--td-text-color-placeholder);
-            user-select: none;
-            white-space: nowrap;
         }
     }
 

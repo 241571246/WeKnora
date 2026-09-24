@@ -161,6 +161,7 @@ func BuildContainer(container *dig.Container) *dig.Container {
 	must(container.Provide(repository.NewModelRepository))
 	must(container.Provide(repository.NewUserRepository))
 	must(container.Provide(repository.NewAuthTokenRepository))
+	must(container.Provide(repository.NewDingTalkExternalIdentityRepository))
 	must(container.Provide(repository.NewSystemSettingRepository))
 	must(container.Provide(neo4jRepo.NewNeo4jRepository))
 	must(container.Provide(repository.NewMCPServiceRepository))
@@ -222,6 +223,8 @@ func BuildContainer(container *dig.Container) *dig.Container {
 	must(container.Provide(service.NewDatasetService))
 	must(container.Provide(service.NewEvaluationService))
 	must(container.Provide(service.NewUserService))
+	must(container.Provide(service.NewDingTalkClient))
+	must(container.Provide(service.NewDingTalkAuthService))
 	must(container.Provide(service.NewSystemSettingService))
 	must(container.Provide(func(
 		repo repository.TenantSandboxConfigRepository,
@@ -421,6 +424,7 @@ func BuildContainer(container *dig.Container) *dig.Container {
 	must(container.Provide(handler.NewEvaluationHandler))
 	must(container.Provide(handler.NewInitializationHandler))
 	must(container.Provide(handler.NewAuthHandler))
+	must(container.Provide(handler.NewDingTalkAuthHandler))
 	must(container.Provide(handler.NewSystemHandler))
 	must(container.Provide(handler.NewMCPServiceHandler))
 	must(container.Provide(handler.NewMCPCredentialsHandler))
