@@ -22,6 +22,19 @@ func RequireKBCapability(
 	capability types.KBCapability,
 	authorizer interfaces.KBAuthorizer,
 ) gin.HandlerFunc {
+	return RequireKBCapabilities(func(c *gin.Context) ([]string, error) {
+		id, err := resolveKBID(c)
+		return []string{id}, err
+	}, capability, authorizer)
+}
+
+// RequireKBCapabilities checks every target before a batch operation runs.
+// Checking only the first KB would allow a permitted KB to mask denied ones.
+func RequireKBCapabilities(
+	resolveKBIDs func(*gin.Context) ([]string, error),
+	capability types.KBCapability,
+	authorizer interfaces.KBAuthorizer,
+) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		mode := types.CurrentKBACLMode()
 		if mode == types.KBACLModeOff {
@@ -35,7 +48,7 @@ func RequireKBCapability(
 			c.Abort()
 			return
 		}
-		kbID, err := resolveKBID(c)
+		kbIDs, err := resolveKBIDs(c)
 		if err != nil {
 			types.RecordKBACLError()
 			_ = c.Error(err)
@@ -50,36 +63,37 @@ func RequireKBCapability(
 			c.Abort()
 			return
 		}
-		decision, err := authorizer.Authorize(ctx, interfaces.KBPolicyRequest{
-			TenantID: tenantID, KBID: kbID, UserID: userID,
-			TenantRole: types.TenantRoleFromContext(ctx), Capability: capability,
-			AgentID: c.Query("agent_id"),
-		})
-		if err != nil {
-			logger.ErrorWithFields(ctx, err, map[string]interface{}{"kb_id": kbID, "capability": capability})
-			_ = c.Error(apperrors.NewServiceUnavailableError("cannot verify KB capability right now"))
-			c.Abort()
-			return
-		}
-		if !decision.Allowed {
-			logger.Warnf(ctx, "[kb_acl] denied tenant=%d user=%s kb=%s capability=%s source=%s reason=%s",
-				tenantID, userID, kbID, capability, decision.Source, decision.Reason)
-			if mode == types.KBACLModeShadow {
-				types.RecordKBACLShadowDenied()
-				auditKBCapabilityDenied(c, tenantID, userID, kbID, capability, decision)
-				logger.Infof(ctx, "[kb_acl_metric] shadow_denied=1 tenant=%d kb=%s capability=%s", tenantID, kbID, capability)
-				c.Next()
+		for _, kbID := range kbIDs {
+			decision, err := authorizer.Authorize(ctx, interfaces.KBPolicyRequest{
+				TenantID: tenantID, KBID: kbID, UserID: userID,
+				TenantRole: types.TenantRoleFromContext(ctx), Capability: capability,
+				AgentID: c.Query("agent_id"),
+			})
+			if err != nil {
+				logger.ErrorWithFields(ctx, err, map[string]interface{}{"kb_id": kbID, "capability": capability})
+				_ = c.Error(apperrors.NewServiceUnavailableError("cannot verify KB capability right now"))
+				c.Abort()
 				return
 			}
-			types.RecordKBACLDenied()
-			auditKBCapabilityDenied(c, tenantID, userID, kbID, capability, decision)
-			_ = c.Error(apperrors.NewForbiddenError("knowledge-base capability denied"))
-			c.Abort()
-			return
+			if !decision.Allowed {
+				logger.Warnf(ctx, "[kb_acl] denied tenant=%d user=%s kb=%s capability=%s source=%s reason=%s",
+					tenantID, userID, kbID, capability, decision.Source, decision.Reason)
+				if mode == types.KBACLModeShadow {
+					types.RecordKBACLShadowDenied()
+					auditKBCapabilityDenied(c, tenantID, userID, kbID, capability, decision)
+					logger.Infof(ctx, "[kb_acl_metric] shadow_denied=1 tenant=%d kb=%s capability=%s", tenantID, kbID, capability)
+					continue
+				}
+				types.RecordKBACLDenied()
+				auditKBCapabilityDenied(c, tenantID, userID, kbID, capability, decision)
+				_ = c.Error(apperrors.NewForbiddenError("knowledge-base capability denied"))
+				c.Abort()
+				return
+			}
+			types.RecordKBACLAllowed()
+			c.Set(KBPolicyDecisionContextKey, decision)
+			c.Request = c.Request.WithContext(context.WithValue(ctx, KBPolicyDecisionContextKey, decision))
 		}
-		types.RecordKBACLAllowed()
-		c.Set(KBPolicyDecisionContextKey, decision)
-		c.Request = c.Request.WithContext(context.WithValue(ctx, KBPolicyDecisionContextKey, decision))
 		c.Next()
 	}
 }

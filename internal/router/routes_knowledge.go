@@ -374,6 +374,6 @@ func RegisterWikiPageRoutes(r *gin.RouterGroup, wikiHandler *handler.WikiPageHan
 
 	wikiSearch := g.apiKeyGroup(r.Group("/wiki-search", g.Viewer()), apiKeyRetrieve(apiKeyFullAccess()))
 	{
-		wikiSearch.POST("", wikiHandler.SearchPagesAcross)
+		wikiSearch.POST("", g.WikiSearchKBCapabilities(), wikiHandler.SearchPagesAcross)
 	}
 }
