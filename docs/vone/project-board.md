@@ -8,17 +8,17 @@
 - Health: 有风险（AT_RISK）
 - Current Gate: 项目交付
 - Target Release: VONE-0.7.2.1
-- Updated At: 2026-08-21T14:54:09+08:00
+- Updated At: 2026-10-13T09:55:29+08:00
 
 ## 项目健康摘要（Project Health Summary）
 
 | 活动事项（Active Items） | 阻塞事项（Blocked Items） | 逾期事项（Overdue Items） | 待测试（Pending QA） | 待业务验收（Pending Acceptance） | 当前目标版本（Target Release） |
 |---|---|---|---|---|---|
-| 2 | 0 | 2 | 1 | 0 | VONE-0.7.2.1 |
+| 3 | 0 | 2 | 1 | 0 | VONE-0.7.2.1 |
 
 | 草稿（Draft） | 已就绪（Ready） | 已规划（Planned） | 进行中（In Progress） | 待测试（Pending QA） | 测试通过（QA Passed/Verified） | 已发布（Released） | 已关闭（Closed） |
 |---|---|---|---|---|---|---|---|
-| 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 |
+| 0 | 0 | 0 | 1 | 1 | 1 | 0 | 0 |
 
 ## 当前关注事项（Current Focus）
 
@@ -26,6 +26,7 @@
 |---|---|---|---|---|---|---|---|---|
 | 1 | REQ-2026-001 | 需求 | QA 完成 / QA 独立性 | QA_EVIDENCE_MISSING (+1) | 2026-08-18T01:24:46+08:00 | ROCKL | 待定 | 有风险（AT_RISK） |
 | 2 | BUG-2026-001 | 缺陷 | 发布就绪 | RELEASE_AUTHORIZATION_BLOCKED | 2026-08-18T11:34:46+08:00 | ROCKL | 待定 | 正常（HEALTHY） |
+| 3 | REQ-2026-002 | 需求 | QA 就绪 | QA_HANDOFF_MISSING | 2026-10-13T09:25:00+08:00 | ROCKL | 待定 | 正常（HEALTHY） |
 
 ## 钉钉采集摘要（DingTalk Intake Summary）
 
@@ -37,6 +38,7 @@
 
 | 事项编号（Work Item ID） | 类型（Type） | 已登记状态（Recorded Status） | 期望状态（Expected Status） | 当前门禁（Current Gate） | 技术验证（Technical Verification） | 测试独立性（QA Independence） | 业务验收（Business Acceptance） | 发布授权（Release Authorization） | 首要闭环缺口（Primary Closure Gap） | 健康度（Health） |
 |---|---|---|---|---|---|---|---|---|---|---|
+| REQ-2026-002 | 需求 | 进行中 | 进行中 | QA 就绪 | 通过（PASS） | 需要例外审批 | 待补充 | 待处理（PENDING） | QA_HANDOFF_MISSING | 正常（HEALTHY） |
 | REQ-2026-001 | 需求 | 待 QA | 待 QA | QA 完成 / QA 独立性 | 通过（PASS） | 需要例外审批 | 待补充 | 阻塞（BLOCKED） | QA_EVIDENCE_MISSING (+1) | 有风险（AT_RISK） |
 | BUG-2026-001 | 缺陷 | 已验证 | 已验证 | 发布就绪 | 通过（PASS） | EXCEPTION APPROVED | 待补充 | 阻塞（BLOCKED） | RELEASE_AUTHORIZATION_BLOCKED | 正常（HEALTHY） |
 
@@ -49,6 +51,7 @@
 
 | 需求编号（Requirement ID） | 需求名称（Title） | 提出时间（Requested At） | 来源客户（Source Customers） | 承诺性质（Commitment Type） | 优先级（Priority） | 风险等级（Risk） | 状态（Status） | 负责人（Owner） | 目标版本（Target Release） | 未关闭缺陷（Open Bugs） | 依赖摘要（Dependency Summary） | 健康度（Health） |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
+| REQ-2026-002 | 钉钉参数自动登录 | 2026-10-13T09:18:00+08:00 | 无 | 内部优化 | P2 | 低 | 进行中 | ROCKL | VONE-DINGTALK-AUTOLOGIN-20261013 | 0 | 无 | 正常（HEALTHY） |
 | REQ-2026-001 | 知识库树形管理与细粒度成员权限 | 2026-08-17T17:38:31+08:00 | 无 | 产品规划 | P1 | 高 | 待 QA | ROCKL | VONE-0.7.2.1 | 1 | 无 | 有风险（AT_RISK） |
 
 ## 缺陷摘要（Bug Summary）
@@ -61,6 +64,7 @@
 
 | 变更编号（Change ID） | 关联需求（Requirement ID） | 提出时间（Requested At） | 变更类型（Change Type） | 基线影响（Baseline Impact） | 发布影响（Release Impact） | 审批状态（Approval Status） | 审批人（Approver） | 实施任务（Task IDs） | 状态（Status） |
 |---|---|---|---|---|---|---|---|---|---|
+| CHG-2026-003 | REQ-2026-002 | 2026-10-13T09:18:00+08:00 | Additive Frontend Entry | Opt-in parameter reuses existing DingTalk login; no API or permission change. | Frontend-only candidate; SSH and real-account QA remain external gates. | 已批准 | ROCKL | TASK-20261013-FE-ROCKL-01 | 进行中 |
 | CHG-2026-001 | REQ-2026-001 | 2026-08-21T14:15:00+08:00 | UI Behavior | In-scope presentation amendment; no requirement capability change | Included in VONE-0.7.2.1 frontend candidate | 已批准 | ROCKL | TASK-20260817-FE-ROCKL-01 | 待 QA |
 | CHG-2026-002 | REQ-2026-001 | 2026-08-21T14:49:24+08:00 | Scope Expansion / Full-stack Capability | Proposed expansion of the explicit non-scope for persistent empty knowledge-base document folders | Unassigned; no target release or implementation commitment before evaluation and approval | Pending Evaluation | 不适用 | 无 | 草稿 |
 
@@ -68,6 +72,7 @@
 
 | 事项编号（Work Item ID） | 类型（Type） | 流程档位（Process Profile） | 基线复杂度（Baseline Complexity） | 实际复杂度（Observed Complexity） | 执行模式（Execution Model） | 预计 AI 主动时间（Estimated AI Active Hours） | 实际 AI 主动时间（Actual AI Active Hours） | 实际人工主动时间（Actual Human Active Hours） | 人工复核/测试时间（Human Review/QA Hours） | 流程经过时间（Elapsed Hours） | 阻塞等待时间（Blocked Wait Hours） | 返工次数（Rework Count） | 一次通过（First Pass） | 主要返工原因（Primary Rework Cause） | 数据口径（Time Basis） | 置信度（Confidence） |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| REQ-2026-002 | 需求 | 标准档 | XS | 未记录 | 单 AI Agent | 1.0 | 不适用 | 不适用 | 不适用 | 不适用 | 不适用 | 0 | 是 | 不适用 | 未知 | 低 |
 | REQ-2026-001 | 需求 | 未记录 | XL | 未记录 | 未记录 | 不适用 | 不适用 | 不适用 | 不适用 | 不适用 | 不适用 | 0 | 未记录 | 未记录 | 未知 | 低 |
 | BUG-2026-001 | 缺陷 | 受控档 | XS | XS | 单 AI Agent | 不适用 | 不适用 | 不适用 | 不适用 | 不适用 | 不适用 | 0 | 未记录 | 未记录 | 未知 | 低 |
 
@@ -76,6 +81,7 @@
 | 版本引用（Release Reference） | 发布类型（Release Type） | 目标日期（Target Date） | 承诺状态（Commitment Status） | 范围摘要（Scope Summary） | 测试就绪（QA Ready） | 发布就绪（Release Ready） | 回滚就绪（Rollback Readiness） | 发布后验证截止时间（Post-Release Verify Until） | 回滚触发摘要（Rollback Trigger Summary） | 负责人（Owner） | 发布清单（Release Manifest） |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | VONE-0.7.2.1 | 标准档 | 待定 | 已承诺 | REQ-2026-001, BUG-2026-001 | 阻塞（BLOCKED） | 通过（PASS） | 见发布清单 | 见发布清单 | 见发布清单 | ROCKL | F:\Docker\weknora\docs\vone\releases\VONE-0.7.2.1\release-manifest.md |
+| VONE-DINGTALK-AUTOLOGIN-20261013 | 标准档 | 待定 | 候选版本 / 未承诺 | REQ-2026-002 | 阻塞（BLOCKED） | 阻塞（BLOCKED） | 阻塞（BLOCKED） | 待定 | 待定 | ROCKL | 未创建 |
 
 ## 风险与问题（Risks and Issues）
 
@@ -105,14 +111,14 @@
 
 | 指标名称（Metric） | 当前值（Current Value） | 上期值（Previous Value） | 趋势（Trend） | 统计窗口（Window） | 口径版本（Definition Version） | 数据时间（As of） |
 |---|---|---|---|---|---|---|
-| 缺陷逃逸率（Defect Escape Rate） | 待定 | 待定 | → | 最近3个已结束版本 | V1 | 2026-08-21 |
-| 测试驳回率（QA Rejection Rate） | 待定 | 待定 | → | 最近3个已结束版本 | V1 | 2026-08-21 |
-| 平均闭环时长（Average Closure Time） | 待定 | 待定 | → | 最近30天 | V1 | 2026-08-21 |
-| 一次通过率（First Pass Rate） | 待定 | 待定 | → | 试点完成事项 | V1 | 2026-08-21 |
-| 需求侧返工占比（Requirement-side Rework Share） | 待定 | 待定 | → | 试点返工事件 | V1 | 2026-08-21 |
-| 估算偏差（Estimation Variance） | 待定 | 待定 | → | 按复杂度分组 | V1 | 2026-08-21 |
-| 逾期行动数（Overdue Action Count） | 2 | 待定 | → | 当前态 | V1 | 2026-08-21 |
-| 逾期里程碑数（Overdue Milestone Count） | 0 | 待定 | → | 当前态 | V1 | 2026-08-21 |
+| 缺陷逃逸率（Defect Escape Rate） | 待定 | 待定 | → | 最近3个已结束版本 | V1 | 2026-10-13 |
+| 测试驳回率（QA Rejection Rate） | 待定 | 待定 | → | 最近3个已结束版本 | V1 | 2026-10-13 |
+| 平均闭环时长（Average Closure Time） | 待定 | 待定 | → | 最近30天 | V1 | 2026-10-13 |
+| 一次通过率（First Pass Rate） | 待定 | 待定 | → | 试点完成事项 | V1 | 2026-10-13 |
+| 需求侧返工占比（Requirement-side Rework Share） | 待定 | 待定 | → | 试点返工事件 | V1 | 2026-10-13 |
+| 估算偏差（Estimation Variance） | 待定 | 待定 | → | 按复杂度分组 | V1 | 2026-10-13 |
+| 逾期行动数（Overdue Action Count） | 2 | 待定 | → | 当前态 | V1 | 2026-10-13 |
+| 逾期里程碑数（Overdue Milestone Count） | 0 | 待定 | → | 当前态 | V1 | 2026-10-13 |
 
 ## 项目章程（Project Charter）
 
@@ -152,4 +158,4 @@
 - QA Independence Exception Approver: Tim / T001 (BUG-2026-001 scoped exception approved; no release-wide exception granted)
 - Owner Assignment Gate: 通过（PASS）
 - QA Independence Gate: 需要例外审批
-- Updated At: 2026-08-21T14:54:09+08:00
+- Updated At: 2026-10-13T09:55:29+08:00

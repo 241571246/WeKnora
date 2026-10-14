@@ -1,5 +1,17 @@
 schemaVersion: 1
 changes:
+  - id: CHG-2026-003
+    requirementId: REQ-2026-002
+    requestedAt: "2026-10-13T09:18:00+08:00"
+    changeType: Additive Frontend Entry
+    baselineImpact: Opt-in parameter reuses existing DingTalk login; no API or permission change.
+    releaseImpact: Frontend-only candidate; SSH and real-account QA remain external gates.
+    approvalStatus: Approved
+    approver: ROCKL
+    approvedAt: "2026-10-13T09:25:00+08:00"
+    document: changes/2026-10-13-FE-CH-钉钉参数自动登录.md
+    taskIds: [TASK-20261013-FE-ROCKL-01]
+    status: In Progress
   - id: CHG-2026-001
     requirementId: REQ-2026-001
     requestedAt: "2026-08-21T14:15:00+08:00"

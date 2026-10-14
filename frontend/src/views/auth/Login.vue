@@ -384,6 +384,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 import VoneLoginExperience from '@/customizations/vone/components/VoneLoginExperience.vue'
 import { brandProfile } from '@/customizations/vone'
+import { getDingTalkAutoLoginEntry } from './dingtalkAutoLogin'
+import { hasPendingFederatedCallback } from '@/router/federatedCallback'
 
 // Import screenshot images
 import screenshot1 from '@/assets/img/screenshot-1.svg'
@@ -394,6 +396,10 @@ import screenshot4 from '@/assets/img/screenshot-4.svg'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const autoDingTalkEntry = getDingTalkAutoLoginEntry({
+  path: route.path, query: route.query, hash: window.location.hash,
+})
+let loginViewActive = true
 const { t, tm, locale } = useI18n()
 const { formatRole, roleIcon } = useRoleLabel()
 
@@ -565,6 +571,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  loginViewActive = false
   document.removeEventListener('click', handleClickOutside)
 })
 
@@ -710,7 +717,7 @@ const requestDingTalkInsideCode = async (): Promise<string | null> => {
 }
 
 const handleDingTalkLogin = async () => {
-  if (!dingtalkEnabled.value) return
+  if (!dingtalkEnabled.value || dingtalkLoading.value || loading.value || oidcLoading.value) return
   dingtalkLoading.value = true
   try {
     if (inviteToken.value) {
@@ -854,6 +861,14 @@ const handleRegister = async () => {
 
 // Check if already logged in; for lite edition, attempt transparent auto-setup
 onMounted(async () => {
+  // Consume before any async work: failure/refresh/back must not cause a loop.
+  // Keep invitation/other query values and unrelated hashes intact.
+  if (autoDingTalkEntry.requested) {
+    const failure = await router.replace({
+      path: route.path, query: autoDingTalkEntry.query, hash: route.hash,
+    })
+    if (failure || !loginViewActive || route.path !== '/login') return
+  }
   // Share-link landing: ?token=xxx switches the form into invite-
   // register mode before any other auto-flow (logged-in redirect /
   // auto-setup / OIDC) gets a chance to redirect. Resolution failure
@@ -922,8 +937,13 @@ onMounted(async () => {
     }
   }
 
-  loadFederatedAuthConfigs()
   loadAuthConfig()
+  await loadFederatedAuthConfigs()
+  if (autoDingTalkEntry.shouldLogin && loginViewActive && route.path === '/login'
+    && !authStore.isLoggedIn && !isRegisterMode.value
+    && !hasPendingFederatedCallback(window.location.hash)) {
+    await handleDingTalkLogin()
+  }
 })
 </script>
 

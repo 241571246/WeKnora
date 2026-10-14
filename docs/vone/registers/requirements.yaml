@@ -1,5 +1,74 @@
 schemaVersion: 1
 requirements:
+  - id: REQ-2026-002
+    title: 钉钉参数自动登录
+    document: requirements/2026-10-13-FE-RE-钉钉参数自动登录.md
+    planDocument: plans/2026-10-13-FE-PL-钉钉参数自动登录.md
+    requestedAt: "2026-10-13T09:18:00+08:00"
+    timeBasis: First Registered At
+    sourceItemId: CODEX-20261013-WEKNORA-DINGTALK-AUTOLOGIN
+    sourceCustomerIds: []
+    commitmentType: Internal Optimization
+    contractReference: N/A
+    priority: P2
+    risk: Low
+    status: In Progress
+    owner: ROCKL
+    targetRelease: VONE-DINGTALK-AUTOLOGIN-20261013
+    taskIds: [TASK-20261013-FE-ROCKL-01]
+    dependsOn: []
+    blocks: []
+    acceptanceCriteriaReady: true
+    implementationAdmission: PASS
+    technicalVerification: PASS
+    qaHandoffEvidence: N/A
+    qaEvidence: N/A
+    qaIndependence:
+      gate: EXCEPTION REQUIRED
+      reason: Same ROCKL accountability; technical self-verification is not independent QA.
+      exceptionApprover: TBD
+      evidence: Pending
+    releaseId: null
+    releaseAuthorization: PENDING
+    businessAcceptanceEvidence: Pending
+    acceptanceEvidence: requirements/2026-10-13-FE-RE-钉钉参数自动登录.md
+    closureGaps: [QA_HANDOFF_MISSING]
+    lastStateChangedAt: "2026-10-13T09:25:00+08:00"
+    complexity:
+      baseline:
+        status: Assessed
+        requirementUncertainty: 1
+        impactRadius: 1
+        integrationComplexity: 1
+        verificationReleaseComplexity: 3
+        size: XS
+        assessedAt: "2026-10-13T09:25:00+08:00"
+        assessedBy: ROCKL / Codex recorder
+        evidence: plans/2026-10-13-FE-PL-钉钉参数自动登录.md
+      observed:
+        status: Not Assessed
+        requirementUncertainty: null
+        impactRadius: null
+        integrationComplexity: null
+        verificationReleaseComplexity: null
+        size: Not Recorded
+        assessedAt: null
+        assessedBy: null
+        evidence: null
+    measurement:
+      dataStatus: Active
+      processProfile: Standard
+      executionModel: Single AI Agent
+      estimatedAiActiveHours: 1.0
+      actualAiActiveHours: null
+      estimatedHumanActiveHours: null
+      actualHumanActiveHours: null
+      humanReviewQaHours: null
+      elapsedHours: null
+      blockedWaitHours: null
+      timeBasis: Unknown
+      confidence: Low
+      evidence: plans/2026-10-13-FE-PL-钉钉参数自动登录.md
   - id: REQ-2026-001
     title: 知识库树形管理与细粒度成员权限
     document: requirements/2026-08-17-KB-RE-知识库树形管理与精细化权限.md

@@ -37,6 +37,20 @@ WEKNORA_DINGTALK_AUTH_DEFAULT_TENANT_ROLE=viewer
 
 ## 3. 首次账号处理
 
+### 钉钉工作台自动入口
+
+前端支持可选入口 `/login?autologindingtalk=true`，例如：
+
+```text
+https://co.vonechina.com:13443/login?autologindingtalk=true
+```
+
+只接受精确的 `true`。未登录时等待钉钉配置就绪后，自动调用现有登录流程：有钉钉桥接时尝试企业内免登，否则跳转现有浏览器 OAuth。参数不携带凭据，也不能绕过钉钉要求的授权确认。
+
+参数在发起前从当前 URL 消费，失败后停留登录页，刷新不会再次自动跳转；可手动点钉钉登录重试，或重新打开工作台入口发起新尝试。不带参数的 `/login` 保持手动登录。授权回调和邀请/注册流程优先，不触发竞争的自动登录。
+
+该参数需发布支持它的前端版本后才生效；不需要后端或数据库变更。真实钉钉客户端登录与平台授权仍需用真实账号验收。
+
 默认关闭 JIT 和邮箱自动绑定。未建立映射的钉钉身份会保存为 `pending`，但不会登录到任何本地账号。
 
 - 已有 WeKnora 账号：先审核身份，再把 `external_auth_identities.user_id` 绑定到目标本地用户。
