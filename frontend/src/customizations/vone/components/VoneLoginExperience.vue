@@ -118,7 +118,7 @@
           </div>
         </div>
 
-        <div v-else-if="registrationEnabled || inviteLookup" class="vone-auth-card vone-auth-card--register">
+        <div v-else-if="registrationEnabled" class="vone-auth-card vone-auth-card--register">
           <div v-if="inviteLookup" class="invite-banner">
             <span class="invite-banner__icon">↗</span>
             <div>
